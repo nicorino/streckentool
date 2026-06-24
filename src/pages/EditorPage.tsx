@@ -156,6 +156,8 @@ export function EditorPage() {
   const exportFrameLabel = getExportFormatLabel(exportFormat);
   const zoomPercent = Math.round(zoom * 100);
 
+  const effectiveSnapToGrid = activeTool === "calibrate" ? false : snapToGrid;
+
   function addRectangle() {
     const id = crypto.randomUUID();
 
@@ -317,6 +319,7 @@ export function EditorPage() {
       y: 0,
       width: defaultWidth,
       height: defaultHeight,
+      rotation: 0,
       opacity: 0.45,
       locked: false,
     };
@@ -922,7 +925,7 @@ export function EditorPage() {
             onUpdateFigure={updateFigure}
             onUpdateDecoration={updateDecoration}
             onUpdateBackgroundImage={updateBackgroundImage}
-            snapToGrid={snapToGrid}
+            snapToGrid={effectiveSnapToGrid}
             showGrid={!printPreview}
             showCourseFill={!printPreview}
             showHelperLines={!printPreview && showHelperLines}

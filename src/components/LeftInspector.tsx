@@ -140,6 +140,16 @@ export function LeftInspector({
               />
 
               <NumberInput
+                label={t("rotationDeg")}
+                value={backgroundImage.rotation}
+                min={-360}
+                step={1}
+                onChange={(value) =>
+                  onUpdateBackgroundImage({ rotation: value })
+                }
+              />
+
+              <NumberInput
                 label={t("widthM")}
                 value={backgroundImage.width}
                 min={0.5}

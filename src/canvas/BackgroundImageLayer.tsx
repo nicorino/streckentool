@@ -44,59 +44,84 @@ export function BackgroundImageLayer({
     return () => {
       image.onload = null;
     };
-  }, [backgroundImage]);
+  }, [backgroundImage?.src]);
 
   if (!backgroundImage) {
     return null;
   }
 
+  const widthPx = metersToPixels(backgroundImage.width);
+  const heightPx = metersToPixels(backgroundImage.height);
+
+  const centerX = metersToPixels(backgroundImage.x + backgroundImage.width / 2);
+  const centerY = metersToPixels(backgroundImage.y + backgroundImage.height / 2);
+
   const isDraggable = isInteractive && !backgroundImage.locked;
+
+  function handleDragMove(event: { target: { x: () => number; y: () => number; x: (value: number) => void; y: (value: number) => void } }) {
+    if (!snapToGrid) return;
+
+    const nextTopLeftX = event.target.x() - widthPx / 2;
+    const nextTopLeftY = event.target.y() - heightPx / 2;
+
+    event.target.x(snapPixels(nextTopLeftX) + widthPx / 2);
+    event.target.y(snapPixels(nextTopLeftY) + heightPx / 2);
+  }
+
+  function handleDragEnd(event: { target: { x: () => number; y: () => number } }) {
+    const nextTopLeftX = pixelsToMeters(event.target.x() - widthPx / 2);
+    const nextTopLeftY = pixelsToMeters(event.target.y() - heightPx / 2);
+
+    onUpdateBackgroundImage({
+      ...backgroundImage,
+      x: snapToGrid ? snapMeters(nextTopLeftX) : nextTopLeftX,
+      y: snapToGrid ? snapMeters(nextTopLeftY) : nextTopLeftY,
+    });
+  }
 
   return (
     <Layer listening={isInteractive && !backgroundImage.locked}>
       {imageElement ? (
         <KonvaImage
           image={imageElement}
-          x={metersToPixels(backgroundImage.x)}
-          y={metersToPixels(backgroundImage.y)}
-          width={metersToPixels(backgroundImage.width)}
-          height={metersToPixels(backgroundImage.height)}
+          x={centerX}
+          y={centerY}
+          width={widthPx}
+          height={heightPx}
+          offsetX={widthPx / 2}
+          offsetY={heightPx / 2}
+          rotation={backgroundImage.rotation}
           opacity={backgroundImage.opacity}
           draggable={isDraggable}
-          onDragMove={(event) => {
-            if (!snapToGrid) return;
-
-            event.target.x(snapPixels(event.target.x()));
-            event.target.y(snapPixels(event.target.y()));
-          }}
-          onDragEnd={(event) => {
-            const nextX = pixelsToMeters(event.target.x());
-            const nextY = pixelsToMeters(event.target.y());
-
-            onUpdateBackgroundImage({
-              ...backgroundImage,
-              x: snapToGrid ? snapMeters(nextX) : nextX,
-              y: snapToGrid ? snapMeters(nextY) : nextY,
-            });
-          }}
+          onDragMove={handleDragMove}
+          onDragEnd={handleDragEnd}
         />
       ) : (
         <Rect
-          x={metersToPixels(backgroundImage.x)}
-          y={metersToPixels(backgroundImage.y)}
-          width={metersToPixels(backgroundImage.width)}
-          height={metersToPixels(backgroundImage.height)}
+          x={centerX}
+          y={centerY}
+          width={widthPx}
+          height={heightPx}
+          offsetX={widthPx / 2}
+          offsetY={heightPx / 2}
+          rotation={backgroundImage.rotation}
           fill="#eee"
           stroke="#999"
+          draggable={isDraggable}
+          onDragMove={handleDragMove}
+          onDragEnd={handleDragEnd}
         />
       )}
 
       {showEditorDecorations && !backgroundImage.locked && (
         <Rect
-          x={metersToPixels(backgroundImage.x)}
-          y={metersToPixels(backgroundImage.y)}
-          width={metersToPixels(backgroundImage.width)}
-          height={metersToPixels(backgroundImage.height)}
+          x={centerX}
+          y={centerY}
+          width={widthPx}
+          height={heightPx}
+          offsetX={widthPx / 2}
+          offsetY={heightPx / 2}
+          rotation={backgroundImage.rotation}
           stroke="#0097a7"
           strokeWidth={2}
           dash={[10, 6]}

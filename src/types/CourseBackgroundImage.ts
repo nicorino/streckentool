@@ -9,6 +9,9 @@ export type CourseBackgroundImage = {
   width: number;
   height: number;
 
+  // Stored in degrees
+  rotation: number;
+
   opacity: number;
   locked: boolean;
 };

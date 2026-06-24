@@ -18,6 +18,10 @@ type PersistedFigureInstance = Omit<FigureInstance, "coneColor"> & {
   coneColor?: string;
 };
 
+type PersistedCourseBackgroundImage = Omit<CourseBackgroundImage, "rotation"> & {
+  rotation?: number;
+};
+
 type PersistedProjectMetadata = Partial<ProjectMetadata>;
 type PersistedLayerSettings = Partial<LayerSettings>;
 
@@ -37,7 +41,7 @@ export type StreckentoolProject = {
   measurements?: {
     items: Measurement[];
   };
-  backgroundImage?: CourseBackgroundImage | null;
+  backgroundImage?: PersistedCourseBackgroundImage | null;
   metadata?: PersistedProjectMetadata;
   layerSettings?: PersistedLayerSettings;
 };
@@ -101,7 +105,7 @@ export function parseStreckentoolProject(text: string): EditorState {
     figures: (parsed.figures?.instances ?? []).map(normalizeFigureInstance),
     decorations: parsed.decorations?.items ?? [],
     measurements: parsed.measurements?.items ?? [],
-    backgroundImage: parsed.backgroundImage ?? null,
+    backgroundImage: normalizeCourseBackgroundImage(parsed.backgroundImage),
     metadata: normalizeProjectMetadata(parsed.metadata),
     layerSettings: normalizeLayerSettings(parsed.layerSettings),
   };
@@ -127,6 +131,23 @@ function normalizeFigureInstance(
       typeof figure.coneColor === "string"
         ? figure.coneColor
         : DEFAULT_CONE_COLOR,
+  };
+}
+
+function normalizeCourseBackgroundImage(
+  backgroundImage: PersistedCourseBackgroundImage | null | undefined
+): CourseBackgroundImage | null {
+  if (!backgroundImage) {
+    return null;
+  }
+
+  return {
+    ...backgroundImage,
+    rotation:
+      typeof backgroundImage.rotation === "number" &&
+      Number.isFinite(backgroundImage.rotation)
+        ? backgroundImage.rotation
+        : 0,
   };
 }
 
@@ -355,7 +376,7 @@ function isMeasurement(value: unknown): value is Measurement {
 
 function isCourseBackgroundImage(
   value: unknown
-): value is CourseBackgroundImage {
+): value is PersistedCourseBackgroundImage {
   if (!isRecord(value)) return false;
 
   return (
@@ -366,12 +387,14 @@ function isCourseBackgroundImage(
     typeof value.y === "number" &&
     typeof value.width === "number" &&
     typeof value.height === "number" &&
+    (value.rotation === undefined || typeof value.rotation === "number") &&
     typeof value.opacity === "number" &&
     typeof value.locked === "boolean" &&
     Number.isFinite(value.x) &&
     Number.isFinite(value.y) &&
     Number.isFinite(value.width) &&
     Number.isFinite(value.height) &&
+    (value.rotation === undefined || Number.isFinite(value.rotation)) &&
     Number.isFinite(value.opacity) &&
     value.width > 0 &&
     value.height > 0 &&
