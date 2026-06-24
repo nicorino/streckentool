@@ -54,9 +54,12 @@ type TopToolbarProps = {
 
   showHelperLines: boolean;
   onToggleShowHelperLines: () => void;
+
+  onImportCreatorJson: (event: ChangeEvent<HTMLInputElement>) => void;
 };
 
 export function TopToolbar({
+  onImportCreatorJson,
   onAddRectangle,
   onAddText,
   onImportImageFile,
@@ -421,26 +424,48 @@ export function TopToolbar({
 
         {activePreset === "project" && (
           <>
-            <ToolbarSection>
-              <button onClick={onNewProject}>{t("newProjectShort")}</button>
+           <ToolbarSection>
+             <button onClick={onNewProject}>{t("newProjectShort")}</button>
 
-              <button onClick={onSaveProject}>{t("save")}</button>
+             <button onClick={onSaveProject}>{t("save")}</button>
 
               <label>
-                <span style={fileButtonStyle}>{t("load")}</span>
+               <span style={fileButtonStyle}>{t("load")}</span>
 
                 <input
                   type="file"
                   accept="application/json,.json"
                   onChange={handleLoadFile}
                   style={{ display: "none" }}
-                />
-              </label>
+               />
+             </label>
+
+             <label>
+                <span style={fileButtonStyle}>{t("importCreatorJson")}</span>
+
+                <input
+                  type="file"
+                  accept="application/json,.json"
+                  onChange={onImportCreatorJson}
+                  style={{ display: "none" }}
+                  />
+             </label>
+
+             <a
+               href="/creator"
+                style={{
+                 ...fileButtonStyle,
+                 textDecoration: "none",
+               }}
+             >
+               {t("creator")}
+              </a>
             </ToolbarSection>
 
-            <ToolbarHint>{t("hotkeyHelp")}</ToolbarHint>
+           <ToolbarHint>{t("hotkeyHelp")}</ToolbarHint>
           </>
         )}
+
       </div>
     </header>
   );

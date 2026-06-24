@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+} from "react";
 import { TopToolbar } from "../components/TopToolbar";
 import type { EditorTool } from "../components/TopToolbar";
 import { LeftInspector } from "../components/LeftInspector";
@@ -29,6 +35,10 @@ import {
 import { useUndoRedo } from "../state/useUndoRedo";
 import { FIGURE_TEMPLATES } from "../figures/figureTemplates";
 import {
+  importCustomFigureTemplatesFromJsonText,
+  useCustomFigureTemplates,
+} from "../figures/customFigureStorage";
+import {
   getExportBounds,
   getExportFormatLabel,
   type ExportFormat,
@@ -56,6 +66,13 @@ const MAX_ZOOM = 4;
 export function EditorPage() {
   const editorCanvasRef = useRef<EditorCanvasHandle>(null);
   const editorHistory = useUndoRedo<EditorState>(createEmptyEditorState());
+
+  const { templates: customFigureTemplates } = useCustomFigureTemplates();
+
+  const figureTemplates = useMemo(
+    () => [...FIGURE_TEMPLATES, ...customFigureTemplates],
+    [customFigureTemplates]
+  );
 
   const editorState = editorHistory.value;
   const rects = editorState.rects;
@@ -103,7 +120,7 @@ export function EditorPage() {
       : null;
 
   const selectedFigureTemplate = selectedFigure
-    ? FIGURE_TEMPLATES.find(
+    ? figureTemplates.find(
         (template) => template.id === selectedFigure.templateId
       ) ?? null
     : null;
@@ -113,7 +130,7 @@ export function EditorPage() {
   const figureBoundsWarnings = getFigureBoundsWarnings(
     rects,
     figures,
-    FIGURE_TEMPLATES
+    figureTemplates
   );
 
   const figureWarningIds = figureBoundsWarnings.map(
@@ -130,7 +147,7 @@ export function EditorPage() {
   const exportBounds = getExportBounds(
     rects,
     figures,
-    FIGURE_TEMPLATES,
+    figureTemplates,
     decorations,
     measurements,
     exportFormat
@@ -279,6 +296,33 @@ export function EditorPage() {
     }));
 
     setSelection(null);
+  }
+
+  async function handleImportCreatorJson(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    try {
+      const jsonText = await file.text();
+      const importedTemplates =
+        importCustomFigureTemplatesFromJsonText(jsonText);
+
+      window.alert(
+        importedTemplates.length === 1
+          ? `Imported custom figure: ${importedTemplates[0].name}`
+          : `Imported ${importedTemplates.length} custom figures.`
+      );
+    } catch (error) {
+      console.error(error);
+      window.alert(
+        "Could not import this JSON file. Make sure it was exported from the Streckentool Creator."
+      );
+    } finally {
+      event.target.value = "";
+    }
   }
 
   function clearBackgroundImage() {
@@ -773,6 +817,7 @@ export function EditorPage() {
         onNewProject={openNewProjectDialog}
         onSaveProject={saveProject}
         onLoadProjectFile={loadProjectFile}
+        onImportCreatorJson={handleImportCreatorJson}
         onExportPng={exportPng}
         exportFormat={exportFormat}
         onChangeExportFormat={setExportFormat}
@@ -835,7 +880,7 @@ export function EditorPage() {
             pendingMeasurementStart={pendingMeasurementStart}
             pendingCalibrationStart={pendingCalibrationStart}
             activeTool={activeTool}
-            figureTemplates={FIGURE_TEMPLATES}
+            figureTemplates={figureTemplates}
             selection={selection}
             disconnectedRectIds={courseValidation.disconnectedRectIds}
             figureWarningIds={figureWarningIds}
@@ -867,7 +912,7 @@ export function EditorPage() {
         </div>
 
         <RightFigureLibrary
-          figureTemplates={FIGURE_TEMPLATES}
+          figureTemplates={figureTemplates}
           onAddFigure={addFigure}
         />
       </div>

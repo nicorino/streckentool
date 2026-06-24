@@ -171,6 +171,8 @@ const translations = {
       "Explain what data is processed, what stays locally in the browser, and which services are used.",
     legalCookiesBody:
       "Explain which cookies or local storage entries are used and why.",
+    creator: "Creator",
+    importCreatorJson: "Import creator JSON",
     
   },
 
@@ -333,6 +335,8 @@ const translations = {
       "Erkläre hier, welche Daten verarbeitet werden, was lokal im Browser bleibt und welche Dienste verwendet werden.",
     legalCookiesBody:
       "Erkläre hier, welche Cookies oder lokalen Speicher-Einträge verwendet werden und warum.",
+    creator: "Creator",
+    importCreatorJson: "Creator-JSON importieren",
   },
 } as const;
 
