@@ -54,8 +54,7 @@ const translations = {
     snapToGrid: "Snap to grid",
     helperLines: "Helper lines",
 
-    hotkeyHelp: "Ctrl+wheel zoom / Space+drag or middle mouse pan",
-    wiki: "Wiki",
+    hotkeyHelp: "Mouse wheel zoom / drag empty canvas to pan",    wiki: "Wiki",
     language: "Language",
 
     newProjectTitle: "New project",
@@ -172,6 +171,7 @@ const translations = {
       "Explain what data is processed, what stays locally in the browser, and which services are used.",
     legalCookiesBody:
       "Explain which cookies or local storage entries are used and why.",
+    
   },
 
   de: {
@@ -215,8 +215,7 @@ const translations = {
     snapToGrid: "Am Raster ausrichten",
     helperLines: "Hilfslinien",
 
-    hotkeyHelp:
-      "Strg+Mausrad zoomen / Leertaste+ziehen oder mittlere Maustaste verschieben",
+    hotkeyHelp: "Mit Mausrad zoomen / leere Fläche ziehen zum Verschieben",
     wiki: "Wiki",
     language: "Sprache",
 

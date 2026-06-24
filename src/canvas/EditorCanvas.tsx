@@ -134,7 +134,6 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, EditorCanvasProps>(
     const [isExporting, setIsExporting] = useState(false);
     const [activeExportBounds, setActiveExportBounds] =
       useState<ProjectBoundsMeters | null>(null);
-    const [isSpacePressed, setIsSpacePressed] = useState(false);
 
     const [stageSize, setStageSize] = useState({
       width: 800,
@@ -163,30 +162,6 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, EditorCanvasProps>(
       resizeObserver.observe(element);
 
       return () => resizeObserver.disconnect();
-    }, []);
-
-    useEffect(() => {
-      function handleKeyDown(event: KeyboardEvent) {
-        if (event.code === "Space") {
-          setIsSpacePressed(true);
-        }
-      }
-
-      function handleKeyUp(event: KeyboardEvent) {
-        if (event.code === "Space") {
-          setIsSpacePressed(false);
-          isPanningRef.current = false;
-          lastPanPointerRef.current = null;
-        }
-      }
-
-      window.addEventListener("keydown", handleKeyDown);
-      window.addEventListener("keyup", handleKeyUp);
-
-      return () => {
-        window.removeEventListener("keydown", handleKeyDown);
-        window.removeEventListener("keyup", handleKeyUp);
-      };
     }, []);
 
     useImperativeHandle(ref, () => ({
@@ -265,10 +240,6 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, EditorCanvasProps>(
     function handleWheel(event: Konva.KonvaEventObject<WheelEvent>) {
       const nativeEvent = event.evt;
 
-      if (!nativeEvent.ctrlKey && !nativeEvent.metaKey) {
-        return;
-      }
-
       nativeEvent.preventDefault();
 
       const stage = stageRef.current;
@@ -310,19 +281,25 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, EditorCanvasProps>(
 
       const isStageClick = event.target === event.target.getStage();
 
+      const isLeftMouseButton = event.evt.button === 0;
+      const isMiddleMouseButton = event.evt.button === 1;
+      const isRightMouseButton = event.evt.button === 2;
+
       const shouldStartPanning =
-        event.evt.button === 1 || (isStageClick && isSpacePressed);
+        isRightMouseButton ||
+        isMiddleMouseButton ||
+        (isLeftMouseButton && isStageClick);
 
       if (shouldStartPanning) {
         event.evt.preventDefault();
+
+        if (isStageClick) {
+          onSelect(null);
+        }
+
         isPanningRef.current = true;
         lastPanPointerRef.current =
           stageRef.current?.getPointerPosition() ?? null;
-        return;
-      }
-
-      if (isStageClick) {
-        onSelect(null);
       }
     }
 
@@ -351,6 +328,10 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, EditorCanvasProps>(
       lastPanPointerRef.current = null;
     }
 
+    function handleContextMenu(event: Konva.KonvaEventObject<MouseEvent>) {
+      event.evt.preventDefault();
+    }
+
     const effectiveShowGrid = showGrid && !isExporting;
     const effectiveShowCourseFill = showCourseFill && !isExporting;
     const effectiveShowHelperLines = showHelperLines && !isExporting;
@@ -363,6 +344,7 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, EditorCanvasProps>(
     return (
       <main
         ref={containerRef}
+        onContextMenu={(event) => event.preventDefault()}
         style={{
           flex: 1,
           overflow: "hidden",
@@ -370,9 +352,7 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, EditorCanvasProps>(
           cursor:
             activeTool === "measure" || activeTool === "calibrate"
               ? "crosshair"
-              : isSpacePressed
-                ? "grab"
-                : "default",
+              : "grab",
         }}
       >
         <Stage
@@ -388,6 +368,7 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, EditorCanvasProps>(
           onMouseMove={handleMouseMove}
           onMouseUp={stopPanning}
           onMouseLeave={stopPanning}
+          onContextMenu={handleContextMenu}
         >
           <Layer listening={false}>
             <Rect
