@@ -38,6 +38,7 @@ import {
   importCustomFigureTemplatesFromJsonText,
   useCustomFigureTemplates,
 } from "../figures/customFigureStorage";
+import { useAppLanguage } from "../i18n/i18n";
 import {
   getExportBounds,
   getExportFormatLabel,
@@ -64,6 +65,7 @@ const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 4;
 
 export function EditorPage() {
+  const { t } = useAppLanguage();
   const editorCanvasRef = useRef<EditorCanvasHandle>(null);
   const editorHistory = useUndoRedo<EditorState>(createEmptyEditorState());
 
@@ -847,8 +849,6 @@ export function EditorPage() {
         onChangeActiveTool={changeActiveTool}
         onClearMeasurements={clearMeasurements}
         hasMeasurements={measurements.length > 0}
-        snapToGrid={snapToGrid}
-        onToggleSnapToGrid={() => setSnapToGrid((current) => !current)}
         onNewProject={openNewProjectDialog}
         onSaveProject={saveProject}
         onLoadProjectFile={loadProjectFile}
@@ -939,6 +939,18 @@ export function EditorPage() {
           />
 
           {!printPreview && (
+            <label style={snapFloatingControlStyle}>
+              <input
+                type="checkbox"
+                checked={snapToGrid}
+                onChange={() => setSnapToGrid((current) => !current)}
+                style={{ marginRight: 6 }}
+              />
+              {t("snapToGrid")}
+            </label>
+          )}
+
+          {!printPreview && (
             <ProjectMetadataPanel
               metadata={metadata}
               onUpdateMetadata={updateMetadata}
@@ -1015,3 +1027,21 @@ function getImageSize(src: string) {
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }
+
+const snapFloatingControlStyle = {
+  position: "absolute" as const,
+  top: 12,
+  left: "50%",
+  transform: "translateX(-50%)",
+  zIndex: 21,
+  display: "flex",
+  alignItems: "center",
+  padding: "6px 10px",
+  borderRadius: 999,
+  border: "1px solid var(--st-border)",
+  background: "var(--st-card)",
+  color: "var(--st-text)",
+  boxShadow: "0 6px 18px rgba(0,0,0,0.18)",
+  fontFamily: "sans-serif",
+  fontSize: 13,
+};

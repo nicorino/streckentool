@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from "react";
+import { useState, type ChangeEvent, type CSSProperties } from "react";
 import type { ProjectMetadata } from "../types/ProjectMetadata";
 import { useAppLanguage } from "../i18n/i18n";
 
@@ -15,6 +15,25 @@ export function ProjectMetadataPanel({
   const [isOpen, setIsOpen] = useState(false);
 
   const title = metadata.title.trim() || t("untitledCourse");
+
+  async function handleLogoFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    try {
+      const src = await readFileAsDataUrl(file);
+
+      onUpdateMetadata({
+        projectLogoSrc: src,
+        projectLogoName: file.name,
+      });
+    } finally {
+      event.target.value = "";
+    }
+  }
 
   return (
     <section style={panelStyle}>
@@ -35,6 +54,8 @@ export function ProjectMetadataPanel({
 
       {isOpen && (
         <div style={bodyStyle}>
+          <SectionTitle>{t("projectBasics")}</SectionTitle>
+
           <TextInput
             label={t("courseTitle")}
             value={metadata.title}
@@ -54,11 +75,64 @@ export function ProjectMetadataPanel({
             onChange={(value) => onUpdateMetadata({ eventDate: value })}
           />
 
+          <SectionTitle>{t("projectPeople")}</SectionTitle>
+
           <TextInput
             label={t("author")}
             value={metadata.authorName}
             onChange={(value) => onUpdateMetadata({ authorName: value })}
           />
+
+          <TextInput
+            label={t("observer")}
+            value={metadata.observerName}
+            onChange={(value) => onUpdateMetadata({ observerName: value })}
+          />
+
+          <TextInput
+            label={t("insuranceNumber")}
+            value={metadata.insuranceNumber}
+            onChange={(value) =>
+              onUpdateMetadata({ insuranceNumber: value })
+            }
+          />
+
+          <SectionTitle>{t("projectLogo")}</SectionTitle>
+
+          {metadata.projectLogoName ? (
+            <div style={logoInfoStyle}>
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                {metadata.projectLogoName}
+              </span>
+
+              <button
+                type="button"
+                onClick={() =>
+                  onUpdateMetadata({
+                    projectLogoSrc: "",
+                    projectLogoName: "",
+                  })
+                }
+              >
+                {t("removeProjectLogo")}
+              </button>
+            </div>
+          ) : (
+            <p style={hintStyle}>{t("projectLogoHint")}</p>
+          )}
+
+          <label>
+            <span style={fileButtonStyle}>{t("importProjectLogo")}</span>
+
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/svg+xml"
+              onChange={handleLogoFile}
+              style={{ display: "none" }}
+            />
+          </label>
+
+          <SectionTitle>{t("exportInformation")}</SectionTitle>
 
           <label style={labelStyle}>
             {t("notes")}
@@ -110,12 +184,36 @@ function TextInput({ label, value, type = "text", onChange }: TextInputProps) {
   );
 }
 
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return <h4 style={sectionTitleStyle}>{children}</h4>;
+}
+
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+      } else {
+        reject(new Error("Could not read logo file."));
+      }
+    };
+
+    reader.onerror = () => {
+      reject(new Error("Could not read logo file."));
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
+
 const panelStyle: CSSProperties = {
   position: "absolute",
   top: 12,
   right: 12,
   zIndex: 20,
-  width: 280,
+  width: 320,
   background: "var(--st-card)",
   color: "var(--st-text)",
   border: "1px solid var(--st-border)",
@@ -142,6 +240,16 @@ const headerButtonStyle: CSSProperties = {
 const bodyStyle: CSSProperties = {
   padding: "0 12px 12px",
   borderTop: "1px solid var(--st-border-soft)",
+  maxHeight: "calc(100vh - 170px)",
+  overflowY: "auto",
+};
+
+const sectionTitleStyle: CSSProperties = {
+  margin: "14px 0 6px",
+  fontSize: 13,
+  color: "var(--st-text-muted)",
+  textTransform: "uppercase",
+  letterSpacing: 0.5,
 };
 
 const labelStyle: CSSProperties = {
@@ -177,4 +285,34 @@ const checkboxLabelStyle: CSSProperties = {
   marginTop: 12,
   fontSize: 13,
   color: "var(--st-text)",
+};
+
+const fileButtonStyle: CSSProperties = {
+  display: "inline-block",
+  padding: "5px 9px",
+  border: "1px solid var(--st-button-border)",
+  borderRadius: 4,
+  background: "var(--st-button-bg)",
+  color: "var(--st-button-text)",
+  cursor: "pointer",
+  fontSize: 13,
+};
+
+const logoInfoStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "1fr auto",
+  alignItems: "center",
+  gap: 8,
+  marginBottom: 8,
+  padding: 8,
+  border: "1px solid var(--st-border)",
+  borderRadius: 6,
+  background: "var(--st-card-soft)",
+  fontSize: 12,
+};
+
+const hintStyle: CSSProperties = {
+  margin: "0 0 8px",
+  fontSize: 12,
+  color: "var(--st-text-muted)",
 };

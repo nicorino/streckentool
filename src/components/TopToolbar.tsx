@@ -13,6 +13,7 @@ export type EditorTool = "select" | "measure" | "calibrate";
 type ToolbarPreset = "plan" | "background" | "export" | "project";
 
 const WIKI_URL = "https://example.com/wiki-placeholder";
+const PAYPAL_URL = "https://example.com/paypal-placeholder";
 
 type TopToolbarProps = {
   onAddRectangle: () => void;
@@ -29,9 +30,6 @@ type TopToolbarProps = {
   onChangeActiveTool: (tool: EditorTool) => void;
   onClearMeasurements: () => void;
   hasMeasurements: boolean;
-
-  snapToGrid: boolean;
-  onToggleSnapToGrid: () => void;
 
   onNewProject: () => void;
   onSaveProject: () => void;
@@ -75,8 +73,6 @@ export function TopToolbar({
   onChangeActiveTool,
   onClearMeasurements,
   hasMeasurements,
-  snapToGrid,
-  onToggleSnapToGrid,
   onNewProject,
   onSaveProject,
   onLoadProjectFile,
@@ -131,41 +127,30 @@ export function TopToolbar({
   }
 
   return (
-    <header
-      style={{
-        height: 86,
-        display: "flex",
-        flexDirection: "column",
-        borderBottom: "1px solid var(--st-border)",
-        boxSizing: "border-box",
-        fontFamily: "sans-serif",
-        background: "var(--st-surface)",
-        color: "var(--st-text)",
-        overflow: "hidden",
-      }}
-    >
-      <div
-        style={{
-          height: 42,
-          position: "relative",
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          padding: "4px 8px",
-          boxSizing: "border-box",
-          borderBottom: "1px solid var(--st-border-soft)",
-          minWidth: 0,
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            flexShrink: 0,
-          }}
-        >
+    <header style={toolbarStyle}>
+      <div style={topRowStyle}>
+        <div style={leftControlsStyle}>
           <strong style={{ marginRight: 8 }}>{t("appName")}</strong>
+
+          <ToolbarSection>
+            <ToolButton
+              active={activeTool === "select"}
+              onClick={() => onChangeActiveTool("select")}
+            >
+              {t("select")}
+            </ToolButton>
+
+            <ToolButton
+              active={activeTool === "measure"}
+              onClick={() => onChangeActiveTool("measure")}
+            >
+              {t("measure")}
+            </ToolButton>
+
+            <button onClick={onClearMeasurements} disabled={!hasMeasurements}>
+              {t("clearMeasurements")}
+            </button>
+          </ToolbarSection>
 
           <PresetButton
             active={activePreset === "plan"}
@@ -247,40 +232,12 @@ export function TopToolbar({
             </select>
           </label>
 
-          <a
-            href={WIKI_URL}
-            target="_blank"
-            rel="noreferrer"
-            style={{
-              display: "inline-block",
-              padding: "5px 10px",
-              border: "1px solid var(--st-primary)",
-              borderRadius: 6,
-              background: "var(--st-primary)",
-              color: "var(--st-primary-text)",
-              textDecoration: "none",
-              fontSize: 13,
-              fontWeight: 700,
-              flexShrink: 0,
-            }}
-          >
-            {t("wiki")}
-          </a>
+          <ToolbarLink href={WIKI_URL}>{t("wiki")}</ToolbarLink>
+          <ToolbarLink href={PAYPAL_URL}>{t("support")}</ToolbarLink>
         </div>
       </div>
 
-      <div
-        style={{
-          height: 44,
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          padding: "5px 8px",
-          boxSizing: "border-box",
-          overflow: "hidden",
-          whiteSpace: "nowrap",
-        }}
-      >
+      <div style={subRowStyle}>
         {activePreset === "plan" && (
           <>
             <ToolbarSection>
@@ -301,38 +258,20 @@ export function TopToolbar({
             </ToolbarSection>
 
             <ToolbarSection>
-              <button onClick={() => onAddArrow("straight")}>Arrow</button>
+              <button onClick={() => onAddArrow("straight")}>
+                {t("arrowStraight")}
+              </button>
 
               <button onClick={() => onAddArrow("straight-long")}>
-                Long arrow
+                {t("arrowLong")}
               </button>
 
               <button onClick={() => onAddArrow("curve-right")}>
-                Curve right
+                {t("arrowCurveRight")}
               </button>
 
               <button onClick={() => onAddArrow("curve-left")}>
-                Curve left
-              </button>
-            </ToolbarSection>
-
-            <ToolbarSection>
-              <button
-                onClick={() => onChangeActiveTool("select")}
-                style={{
-                  fontWeight: activeTool === "select" ? "bold" : "normal",
-                }}
-              >
-                {t("select")}
-              </button>
-
-              <button
-                onClick={() => onChangeActiveTool("measure")}
-                style={{
-                  fontWeight: activeTool === "measure" ? "bold" : "normal",
-                }}
-              >
-                {t("measure")}
+                {t("arrowCurveLeft")}
               </button>
             </ToolbarSection>
 
@@ -340,22 +279,6 @@ export function TopToolbar({
               <button onClick={onDeleteSelected} disabled={!hasSelection}>
                 {t("deleteSelected")}
               </button>
-
-              <button onClick={onClearMeasurements} disabled={!hasMeasurements}>
-                {t("clearMeasurements")}
-              </button>
-            </ToolbarSection>
-
-            <ToolbarSection>
-              <label style={{ fontSize: 13 }}>
-                <input
-                  type="checkbox"
-                  checked={snapToGrid}
-                  onChange={onToggleSnapToGrid}
-                  style={{ marginRight: 6 }}
-                />
-                {t("snapToGrid")}
-              </label>
             </ToolbarSection>
           </>
         )}
@@ -443,23 +366,23 @@ export function TopToolbar({
 
         {activePreset === "project" && (
           <>
-           <ToolbarSection>
-             <button onClick={onNewProject}>{t("newProjectShort")}</button>
+            <ToolbarSection>
+              <button onClick={onNewProject}>{t("newProjectShort")}</button>
 
-             <button onClick={onSaveProject}>{t("save")}</button>
+              <button onClick={onSaveProject}>{t("save")}</button>
 
               <label>
-               <span style={fileButtonStyle}>{t("load")}</span>
+                <span style={fileButtonStyle}>{t("load")}</span>
 
                 <input
                   type="file"
                   accept="application/json,.json"
                   onChange={handleLoadFile}
                   style={{ display: "none" }}
-               />
-             </label>
+                />
+              </label>
 
-             <label>
+              <label>
                 <span style={fileButtonStyle}>{t("importCreatorJson")}</span>
 
                 <input
@@ -467,24 +390,23 @@ export function TopToolbar({
                   accept="application/json,.json"
                   onChange={onImportCreatorJson}
                   style={{ display: "none" }}
-                  />
-             </label>
+                />
+              </label>
 
-             <a
-               href="/creator"
+              <a
+                href="/creator"
                 style={{
-                 ...fileButtonStyle,
-                 textDecoration: "none",
-               }}
-             >
-               {t("creator")}
+                  ...fileButtonStyle,
+                  textDecoration: "none",
+                }}
+              >
+                {t("creator")}
               </a>
             </ToolbarSection>
 
-           <ToolbarHint>{t("hotkeyHelp")}</ToolbarHint>
+            <ToolbarHint>{t("hotkeyHelp")}</ToolbarHint>
           </>
         )}
-
       </div>
     </header>
   );
@@ -521,19 +443,32 @@ function PresetButton({
   );
 }
 
-function ToolbarSection({ children }: { children: ReactNode }) {
+function ToolButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
   return (
-    <section
+    <button
+      type="button"
+      onClick={onClick}
       style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        paddingRight: 10,
-        marginRight: 2,
-        borderRight: "1px solid var(--st-border-soft)",
-        flexShrink: 0,
+        fontWeight: active ? 700 : 500,
+        borderColor: active ? "var(--st-primary)" : "var(--st-button-border)",
       }}
     >
+      {children}
+    </button>
+  );
+}
+
+function ToolbarSection({ children }: { children: ReactNode }) {
+  return (
+    <section style={toolbarSectionStyle}>
       {children}
     </section>
   );
@@ -553,6 +488,62 @@ function ToolbarHint({ children }: { children: ReactNode }) {
     </span>
   );
 }
+
+function ToolbarLink({
+  href,
+  children,
+}: {
+  href: string;
+  children: ReactNode;
+}) {
+  return (
+    <a href={href} target="_blank" rel="noreferrer" style={toolbarLinkStyle}>
+      {children}
+    </a>
+  );
+}
+
+const toolbarStyle = {
+  height: 86,
+  display: "flex",
+  flexDirection: "column" as const,
+  borderBottom: "1px solid var(--st-border)",
+  boxSizing: "border-box" as const,
+  fontFamily: "sans-serif",
+  background: "var(--st-surface)",
+  color: "var(--st-text)",
+  overflow: "hidden",
+};
+
+const topRowStyle = {
+  height: 42,
+  position: "relative" as const,
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  padding: "4px 8px",
+  boxSizing: "border-box" as const,
+  borderBottom: "1px solid var(--st-border-soft)",
+  minWidth: 0,
+};
+
+const subRowStyle = {
+  height: 44,
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  padding: "5px 8px",
+  boxSizing: "border-box" as const,
+  overflow: "hidden",
+  whiteSpace: "nowrap" as const,
+};
+
+const leftControlsStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  flexShrink: 0,
+};
 
 const centerControlsStyle = {
   position: "absolute" as const,
@@ -593,6 +584,16 @@ const compactLabelStyle = {
   flexShrink: 0,
 };
 
+const toolbarSectionStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  paddingRight: 10,
+  marginRight: 2,
+  borderRight: "1px solid var(--st-border-soft)",
+  flexShrink: 0,
+};
+
 const fileButtonStyle = {
   display: "inline-block",
   padding: "3px 8px",
@@ -602,4 +603,17 @@ const fileButtonStyle = {
   color: "var(--st-button-text)",
   cursor: "pointer",
   fontSize: 13,
+};
+
+const toolbarLinkStyle = {
+  display: "inline-block",
+  padding: "5px 10px",
+  border: "1px solid var(--st-primary)",
+  borderRadius: 6,
+  background: "var(--st-primary)",
+  color: "var(--st-primary-text)",
+  textDecoration: "none",
+  fontSize: 13,
+  fontWeight: 700,
+  flexShrink: 0,
 };

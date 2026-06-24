@@ -175,12 +175,28 @@ function normalizeProjectMetadata(
       typeof metadata.authorName === "string"
         ? metadata.authorName
         : defaults.authorName,
+    insuranceNumber:
+      typeof metadata.insuranceNumber === "string"
+        ? metadata.insuranceNumber
+        : defaults.insuranceNumber,
+    observerName:
+      typeof metadata.observerName === "string"
+        ? metadata.observerName
+        : defaults.observerName,
     notes:
       typeof metadata.notes === "string" ? metadata.notes : defaults.notes,
     showTitleBlock:
       typeof metadata.showTitleBlock === "boolean"
         ? metadata.showTitleBlock
         : defaults.showTitleBlock,
+    projectLogoSrc:
+      typeof metadata.projectLogoSrc === "string"
+        ? metadata.projectLogoSrc
+        : defaults.projectLogoSrc,
+    projectLogoName:
+      typeof metadata.projectLogoName === "string"
+        ? metadata.projectLogoName
+        : defaults.projectLogoName,
   };
 }
 
@@ -411,9 +427,17 @@ function isProjectMetadata(value: unknown): value is PersistedProjectMetadata {
     (value.clubName === undefined || typeof value.clubName === "string") &&
     (value.eventDate === undefined || typeof value.eventDate === "string") &&
     (value.authorName === undefined || typeof value.authorName === "string") &&
+    (value.insuranceNumber === undefined ||
+      typeof value.insuranceNumber === "string") &&
+    (value.observerName === undefined ||
+      typeof value.observerName === "string") &&
     (value.notes === undefined || typeof value.notes === "string") &&
     (value.showTitleBlock === undefined ||
-      typeof value.showTitleBlock === "boolean")
+      typeof value.showTitleBlock === "boolean") &&
+    (value.projectLogoSrc === undefined ||
+      typeof value.projectLogoSrc === "string") &&
+    (value.projectLogoName === undefined ||
+      typeof value.projectLogoName === "string")
   );
 }
 

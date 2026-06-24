@@ -25,7 +25,7 @@ const translations = {
     groupExport: "Export",
     groupDisplay: "Display",
 
-    workspace: "Workspace",
+    workspace: "Course area",
     text: "Text",
     imageLogo: "Image/logo",
     background: "Background",
@@ -56,6 +56,20 @@ const translations = {
 
     hotkeyHelp: "Mouse wheel zoom / drag empty canvas to pan",    wiki: "Wiki",
     language: "Language",
+    support: "Support",
+    arrowStraight: "Arrow",
+    arrowLong: "Long arrow",
+    arrowCurveRight: "Turn right",
+    arrowCurveLeft: "Turn left",
+    projectBasics: "Event",
+    projectPeople: "People / administration",
+    projectLogo: "Project logo",
+    projectLogoHint: "Optional logo shown at the top right of the export.",
+    importProjectLogo: "Import logo",
+    removeProjectLogo: "Remove",
+    exportInformation: "Export information",
+    insuranceNumber: "Insurance number",
+    observer: "Observer",
 
     newProjectTitle: "New project",
     newProjectBody:
@@ -110,10 +124,10 @@ const translations = {
         inspector: "Inspector",
     validCourse: "Valid course",
     invalidCourse: "Invalid course",
-    addAtLeastOneWorkspace: "Add at least one workspace.",
+    addAtLeastOneWorkspace: "Add at least one course area.",
     courseAreaValid: "Course area is valid.",
     workspacesMustTouch:
-      "All workspaces must touch or overlap with the main course area.",
+      "All course areas must touch or overlap with the main course area.",
 
     figureWarning: "Figure warning",
     isPartlyOutsideCourse: "is partly outside the course.",
@@ -130,7 +144,7 @@ const translations = {
     rotationDeg: "Rotation (°)",
 
     selectObjectHint:
-      "Select a workspace, figure, text, or image to edit its properties.",
+      "Select a course area, figure, text, or image to edit its properties.",
 
     figure: "Figure",
     coneSingular: "cone",
@@ -188,7 +202,7 @@ const translations = {
     groupExport: "Export",
     groupDisplay: "Anzeige",
 
-    workspace: "Arbeitsfläche",
+    workspace: "Streckenbereich",
     text: "Text",
     imageLogo: "Bild/Logo",
     background: "Hintergrund",
@@ -220,6 +234,20 @@ const translations = {
     hotkeyHelp: "Mit Mausrad zoomen / leere Fläche ziehen zum Verschieben",
     wiki: "Wiki",
     language: "Sprache",
+    support: "Unterstützen",
+    arrowStraight: "Pfeil",
+    arrowLong: "Langer Pfeil",
+    arrowCurveRight: "Rechts abbiegen",
+    arrowCurveLeft: "Links abbiegen",
+    projectBasics: "Veranstaltung",
+    projectPeople: "Personen / Verwaltung",
+    projectLogo: "Projektlogo",
+    projectLogoHint: "Optionales Logo oben rechts im Export.",
+    importProjectLogo: "Logo importieren",
+    removeProjectLogo: "Entfernen",
+    exportInformation: "Exportinformationen",
+    insuranceNumber: "Versicherungsnummer",
+    observer: "Observer",
 
     newProjectTitle: "Neues Projekt",
     newProjectBody:
@@ -238,7 +266,7 @@ const translations = {
 
     welcomeTitle: "Willkommen im Streckentool",
     welcomeIntro:
-      "Plane Kart-Slalom-Strecken direkt im Browser. Erstelle Arbeitsflächen, platziere Figuren maßstabsgetreu, füge Messungen hinzu, importiere Hintergrundbilder und exportiere deinen Plan.",
+      "Plane Kart-Slalom-Strecken direkt im Browser. Erstelle Streckenbereiche, platziere Figuren maßstabsgetreu, füge Messungen hinzu, importiere Hintergrundbilder und exportiere deinen Plan.",
     welcomePrivacyNote:
       "Deine Streckendaten bleiben im Browser, solange du sie nicht selbst exportierst oder als Projektdatei speicherst.",
     welcomeLanguageLabel: "Sprache auswählen",
@@ -274,10 +302,10 @@ const translations = {
         inspector: "Inspektor",
     validCourse: "Gültige Strecke",
     invalidCourse: "Ungültige Strecke",
-    addAtLeastOneWorkspace: "Füge mindestens eine Arbeitsfläche hinzu.",
+    addAtLeastOneWorkspace: "Füge mindestens einen Streckenbereich hinzu.",
     courseAreaValid: "Die Streckenfläche ist gültig.",
     workspacesMustTouch:
-      "Alle Arbeitsflächen müssen die Hauptfläche berühren oder überlappen.",
+      "Alle Streckenbereiche müssen die Hauptfläche berühren oder überlappen.",
 
     figureWarning: "Figurenwarnung",
     isPartlyOutsideCourse: "liegt teilweise außerhalb der Strecke.",
@@ -294,7 +322,7 @@ const translations = {
     rotationDeg: "Drehung (°)",
 
     selectObjectHint:
-      "Wähle eine Arbeitsfläche, Figur, einen Text oder ein Bild aus, um die Eigenschaften zu bearbeiten.",
+      "Wähle einen Streckenbereich, eine Figur, einen Text oder ein Bild aus, um die Eigenschaften zu bearbeiten.",
 
     figure: "Figur",
     coneSingular: "Pylon",

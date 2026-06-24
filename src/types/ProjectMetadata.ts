@@ -3,8 +3,12 @@ export type ProjectMetadata = {
   clubName: string;
   eventDate: string;
   authorName: string;
+  insuranceNumber: string;
+  observerName: string;
   notes: string;
   showTitleBlock: boolean;
+  projectLogoSrc: string;
+  projectLogoName: string;
 };
 
 export function createDefaultProjectMetadata(): ProjectMetadata {
@@ -13,7 +17,11 @@ export function createDefaultProjectMetadata(): ProjectMetadata {
     clubName: "",
     eventDate: "",
     authorName: "",
+    insuranceNumber: "",
+    observerName: "",
     notes: "",
     showTitleBlock: false,
+    projectLogoSrc: "",
+    projectLogoName: "",
   };
 }
