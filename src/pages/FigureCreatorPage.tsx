@@ -1,3 +1,4 @@
+import { createId } from "../utils/createId";
 import {
   useEffect,
   useRef,
@@ -916,7 +917,7 @@ function CreatorGrid() {
 
 function createCustomTemplateId() {
   if (crypto.randomUUID) {
-    return `custom:${crypto.randomUUID()}`;
+    return `custom:${createId()}`;
   }
 
   return `custom:${Date.now()}-${Math.random().toString(16).slice(2)}`;

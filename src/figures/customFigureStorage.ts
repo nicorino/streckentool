@@ -1,3 +1,4 @@
+import { createId } from "../utils/createId";
 import { useCallback, useEffect, useState } from "react";
 import type { FigureElement, FigureTemplate } from "../types/Figure";
 
@@ -226,7 +227,7 @@ function isFiniteNumber(value: unknown): value is number {
 
 function createCustomTemplateId() {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
-    return `custom:${crypto.randomUUID()}`;
+    return `custom:${createId()}`;
   }
 
   return `custom:${Date.now()}-${Math.random().toString(16).slice(2)}`;

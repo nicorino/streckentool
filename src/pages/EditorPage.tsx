@@ -1,3 +1,4 @@
+import { createId } from "../utils/createId";
 import {
   useEffect,
   useMemo,
@@ -161,7 +162,7 @@ export function EditorPage() {
   const effectiveSnapToGrid = activeTool === "calibrate" ? false : snapToGrid;
 
   function addRectangle() {
-    const id = crypto.randomUUID();
+    const id = createId();
 
     editorHistory.set((currentState) => ({
       ...currentState,
@@ -186,7 +187,7 @@ export function EditorPage() {
   }
 
   function addFigure(templateId: string) {
-    const id = crypto.randomUUID();
+    const id = createId();
 
     editorHistory.set((currentState) => ({
       ...currentState,
@@ -211,7 +212,7 @@ export function EditorPage() {
   }
 
   function addText() {
-    const id = crypto.randomUUID();
+    const id = createId();
 
     const textDecoration: Decoration = {
       id,
@@ -239,7 +240,7 @@ export function EditorPage() {
 
 
   function addArrow(arrowKind: ArrowKind) {
-    const id = crypto.randomUUID();
+    const id = createId();
 
     const isLongArrow = arrowKind === "straight-long";
     const isCurveArrow =
@@ -278,7 +279,7 @@ export function EditorPage() {
         ? defaultWidth * (imageSize.height / imageSize.width)
         : 4;
 
-    const id = crypto.randomUUID();
+    const id = createId();
 
     const imageDecoration: Decoration = {
       id,
@@ -314,7 +315,7 @@ export function EditorPage() {
         : 25;
 
     const nextBackgroundImage: CourseBackgroundImage = {
-      id: crypto.randomUUID(),
+      id: createId(),
       src,
       name: file.name,
       x: 0,
@@ -451,7 +452,7 @@ export function EditorPage() {
       return;
     }
 
-    const id = crypto.randomUUID();
+    const id = createId();
 
     const measurement: Measurement = {
       id,
@@ -651,7 +652,7 @@ export function EditorPage() {
   function duplicateSelectedFigure() {
     if (!selectedFigure) return;
 
-    const id = crypto.randomUUID();
+    const id = createId();
 
     editorHistory.set((currentState) => ({
       ...currentState,
