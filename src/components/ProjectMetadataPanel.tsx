@@ -100,23 +100,38 @@ export function ProjectMetadataPanel({
           <SectionTitle>{t("projectLogo")}</SectionTitle>
 
           {metadata.projectLogoName ? (
-            <div style={logoInfoStyle}>
-              <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
-                {metadata.projectLogoName}
-              </span>
+            <>
+              <div style={logoInfoStyle}>
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {metadata.projectLogoName}
+                </span>
 
-              <button
-                type="button"
-                onClick={() =>
+                <button
+                  type="button"
+                  onClick={() =>
+                    onUpdateMetadata({
+                      projectLogoSrc: "",
+                      projectLogoName: "",
+                    })
+                  }
+                >
+                  {t("removeProjectLogo")}
+                </button>
+              </div>
+
+              <NumberInput
+                label={`${t("projectLogoWidth")} (px)`}
+                value={metadata.projectLogoWidth}
+                min={40}
+                max={300}
+                step={5}
+                onChange={(value) =>
                   onUpdateMetadata({
-                    projectLogoSrc: "",
-                    projectLogoName: "",
+                    projectLogoWidth: Math.max(40, Math.min(300, value)),
                   })
                 }
-              >
-                {t("removeProjectLogo")}
-              </button>
-            </div>
+              />
+            </>
           ) : (
             <p style={hintStyle}>{t("projectLogoHint")}</p>
           )}
@@ -178,6 +193,45 @@ function TextInput({ label, value, type = "text", onChange }: TextInputProps) {
         type={type}
         value={value}
         onChange={(event) => onChange(event.target.value)}
+        style={inputStyle}
+      />
+    </label>
+  );
+}
+
+type NumberInputProps = {
+  label: string;
+  value: number;
+  min?: number;
+  max?: number;
+  step?: number;
+  onChange: (value: number) => void;
+};
+
+function NumberInput({
+  label,
+  value,
+  min = 0,
+  max,
+  step = 1,
+  onChange,
+}: NumberInputProps) {
+  return (
+    <label style={labelStyle}>
+      {label}
+      <input
+        type="number"
+        value={value}
+        min={min}
+        max={max}
+        step={step}
+        onChange={(event) => {
+          const nextValue = Number(event.target.value);
+
+          if (Number.isFinite(nextValue)) {
+            onChange(Math.max(min, max === undefined ? nextValue : Math.min(max, nextValue)));
+          }
+        }}
         style={inputStyle}
       />
     </label>

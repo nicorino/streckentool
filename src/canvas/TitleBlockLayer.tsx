@@ -77,21 +77,16 @@ export function TitleBlockLayer({
   const lineCount = Math.max(1, bodyText.split("\n").filter(Boolean).length);
   const height = padding * 2 + titleHeight + lineCount * lineHeight;
 
-  const logoMaxWidth = 150;
-  const logoMaxHeight = 70;
-
   const logoRatio =
     logoImage && logoImage.naturalWidth > 0
       ? logoImage.naturalHeight / logoImage.naturalWidth
       : 0.45;
 
-  let logoWidth = logoMaxWidth;
-  let logoHeight = logoWidth * logoRatio;
-
-  if (logoHeight > logoMaxHeight) {
-    logoHeight = logoMaxHeight;
-    logoWidth = logoHeight / logoRatio;
-  }
+  const logoWidth = Math.max(
+    40,
+    Math.min(300, metadata.projectLogoWidth || 150)
+  );
+  const logoHeight = logoWidth * logoRatio;
 
   return (
     <Layer listening={false}>

@@ -197,6 +197,11 @@ function normalizeProjectMetadata(
       typeof metadata.projectLogoName === "string"
         ? metadata.projectLogoName
         : defaults.projectLogoName,
+    projectLogoWidth:
+      typeof metadata.projectLogoWidth === "number" &&
+      Number.isFinite(metadata.projectLogoWidth)
+        ? metadata.projectLogoWidth
+        : defaults.projectLogoWidth,
   };
 }
 
@@ -437,7 +442,9 @@ function isProjectMetadata(value: unknown): value is PersistedProjectMetadata {
     (value.projectLogoSrc === undefined ||
       typeof value.projectLogoSrc === "string") &&
     (value.projectLogoName === undefined ||
-      typeof value.projectLogoName === "string")
+      typeof value.projectLogoName === "string") &&
+    (value.projectLogoWidth === undefined ||
+      typeof value.projectLogoWidth === "number")
   );
 }
 
