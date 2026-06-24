@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Arrow,
   Group,
@@ -8,6 +8,7 @@ import {
   Path,
   Rect,
   Text,
+  Transformer,
 } from "react-konva";
 import type { ArrowDecoration, Decoration } from "../types/Decoration";
 import type { Selection } from "../types/Selection";
@@ -333,6 +334,9 @@ function ImageDecorationNode({
     null
   );
 
+  const groupRef = useRef<any>(null);
+  const transformerRef = useRef<any>(null);
+
   useEffect(() => {
     const image = new window.Image();
 
@@ -347,35 +351,114 @@ function ImageDecorationNode({
     };
   }, [decoration.src]);
 
+  useEffect(() => {
+    if (!isSelected || !transformerRef.current || !groupRef.current) {
+      return;
+    }
+
+    transformerRef.current.nodes([groupRef.current]);
+    transformerRef.current.getLayer()?.batchDraw();
+  }, [isSelected, decoration.width, decoration.height, decoration.rotation]);
+
   return (
-    <MovableDecorationGroup
-      decoration={decoration}
-      onSelect={onSelect}
-      onUpdateDecoration={onUpdateDecoration}
-      snapToGrid={snapToGrid}
-    >
-      {imageElement ? (
-        <KonvaImage
-          image={imageElement}
-          x={0}
-          y={0}
-          width={metersToPixels(decoration.width)}
-          height={metersToPixels(decoration.height)}
-        />
-      ) : (
-        <Rect
-          x={0}
-          y={0}
-          width={metersToPixels(decoration.width)}
-          height={metersToPixels(decoration.height)}
-          fill="#eee"
-          stroke="#999"
-        />
-      )}
+    <>
+      <Group
+        ref={groupRef}
+        x={metersToPixels(decoration.x)}
+        y={metersToPixels(decoration.y)}
+        rotation={decoration.rotation}
+        draggable
+        onClick={(event) => {
+          event.cancelBubble = true;
+          onSelect();
+        }}
+        onTap={(event) => {
+          event.cancelBubble = true;
+          onSelect();
+        }}
+        onDragMove={(event) => {
+          if (!snapToGrid) return;
+
+          event.target.x(snapPixels(event.target.x()));
+          event.target.y(snapPixels(event.target.y()));
+        }}
+        onDragEnd={(event) => {
+          const nextX = pixelsToMeters(event.target.x());
+          const nextY = pixelsToMeters(event.target.y());
+
+          onUpdateDecoration({
+            ...decoration,
+            x: snapToGrid ? snapMeters(nextX) : nextX,
+            y: snapToGrid ? snapMeters(nextY) : nextY,
+          });
+        }}
+        onTransformEnd={(event) => {
+          const node = event.target;
+
+          const scaleX = node.scaleX();
+          const scaleY = node.scaleY();
+          const scale = Math.max(Math.abs(scaleX), Math.abs(scaleY), 0.01);
+
+          const nextX = pixelsToMeters(node.x());
+          const nextY = pixelsToMeters(node.y());
+
+          node.scaleX(1);
+          node.scaleY(1);
+
+          onUpdateDecoration({
+            ...decoration,
+            x: snapToGrid ? snapMeters(nextX) : nextX,
+            y: snapToGrid ? snapMeters(nextY) : nextY,
+            width: Math.max(0.2, decoration.width * scale),
+            height: Math.max(0.2, decoration.height * scale),
+          });
+        }}
+      >
+        {imageElement ? (
+          <KonvaImage
+            image={imageElement}
+            x={0}
+            y={0}
+            width={metersToPixels(decoration.width)}
+            height={metersToPixels(decoration.height)}
+          />
+        ) : (
+          <Rect
+            x={0}
+            y={0}
+            width={metersToPixels(decoration.width)}
+            height={metersToPixels(decoration.height)}
+            fill="#eee"
+            stroke="#999"
+          />
+        )}
+
+        {showEditorDecorations && isSelected && (
+          <SelectionRect decoration={decoration} />
+        )}
+      </Group>
 
       {showEditorDecorations && isSelected && (
-        <SelectionRect decoration={decoration} />
+        <Transformer
+          ref={transformerRef}
+          rotateEnabled={false}
+          keepRatio={true}
+          flipEnabled={false}
+          enabledAnchors={[
+            "top-left",
+            "top-right",
+            "bottom-left",
+            "bottom-right",
+          ]}
+          boundBoxFunc={(oldBox, newBox) => {
+            if (newBox.width < 10 || newBox.height < 10) {
+              return oldBox;
+            }
+
+            return newBox;
+          }}
+        />
       )}
-    </MovableDecorationGroup>
+    </>
   );
 }
