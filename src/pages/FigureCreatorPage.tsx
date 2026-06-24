@@ -916,7 +916,7 @@ function CreatorGrid() {
 }
 
 function createCustomTemplateId() {
-  if (crypto.randomUUID) {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return `custom:${createId()}`;
   }
 

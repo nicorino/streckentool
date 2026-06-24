@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { KonvaEventObject } from "konva/lib/Node";
 import { Image as KonvaImage, Layer, Rect } from "react-konva";
 import type { CourseBackgroundImage } from "../types/CourseBackgroundImage";
 import {
@@ -50,15 +51,17 @@ export function BackgroundImageLayer({
     return null;
   }
 
-  const widthPx = metersToPixels(backgroundImage.width);
-  const heightPx = metersToPixels(backgroundImage.height);
+  const image = backgroundImage;
 
-  const centerX = metersToPixels(backgroundImage.x + backgroundImage.width / 2);
-  const centerY = metersToPixels(backgroundImage.y + backgroundImage.height / 2);
+  const widthPx = metersToPixels(image.width);
+  const heightPx = metersToPixels(image.height);
 
-  const isDraggable = isInteractive && !backgroundImage.locked;
+  const centerX = metersToPixels(image.x + image.width / 2);
+  const centerY = metersToPixels(image.y + image.height / 2);
 
-  function handleDragMove(event: { target: { x: () => number; y: () => number; x: (value: number) => void; y: (value: number) => void } }) {
+  const isDraggable = isInteractive && !image.locked;
+
+  function handleDragMove(event: KonvaEventObject<DragEvent>) {
     if (!snapToGrid) return;
 
     const nextTopLeftX = event.target.x() - widthPx / 2;
@@ -68,19 +71,19 @@ export function BackgroundImageLayer({
     event.target.y(snapPixels(nextTopLeftY) + heightPx / 2);
   }
 
-  function handleDragEnd(event: { target: { x: () => number; y: () => number } }) {
+  function handleDragEnd(event: KonvaEventObject<DragEvent>) {
     const nextTopLeftX = pixelsToMeters(event.target.x() - widthPx / 2);
     const nextTopLeftY = pixelsToMeters(event.target.y() - heightPx / 2);
 
     onUpdateBackgroundImage({
-      ...backgroundImage,
+      ...image,
       x: snapToGrid ? snapMeters(nextTopLeftX) : nextTopLeftX,
       y: snapToGrid ? snapMeters(nextTopLeftY) : nextTopLeftY,
     });
   }
 
   return (
-    <Layer listening={isInteractive && !backgroundImage.locked}>
+    <Layer listening={isInteractive && !image.locked}>
       {imageElement ? (
         <KonvaImage
           image={imageElement}
@@ -90,8 +93,8 @@ export function BackgroundImageLayer({
           height={heightPx}
           offsetX={widthPx / 2}
           offsetY={heightPx / 2}
-          rotation={backgroundImage.rotation}
-          opacity={backgroundImage.opacity}
+          rotation={image.rotation}
+          opacity={image.opacity}
           draggable={isDraggable}
           onDragMove={handleDragMove}
           onDragEnd={handleDragEnd}
@@ -104,7 +107,7 @@ export function BackgroundImageLayer({
           height={heightPx}
           offsetX={widthPx / 2}
           offsetY={heightPx / 2}
-          rotation={backgroundImage.rotation}
+          rotation={image.rotation}
           fill="#eee"
           stroke="#999"
           draggable={isDraggable}
@@ -113,7 +116,7 @@ export function BackgroundImageLayer({
         />
       )}
 
-      {showEditorDecorations && !backgroundImage.locked && (
+      {showEditorDecorations && !image.locked && (
         <Rect
           x={centerX}
           y={centerY}
@@ -121,7 +124,7 @@ export function BackgroundImageLayer({
           height={heightPx}
           offsetX={widthPx / 2}
           offsetY={heightPx / 2}
-          rotation={backgroundImage.rotation}
+          rotation={image.rotation}
           stroke="#0097a7"
           strokeWidth={2}
           dash={[10, 6]}

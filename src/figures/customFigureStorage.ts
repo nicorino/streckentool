@@ -226,7 +226,7 @@ function isFiniteNumber(value: unknown): value is number {
 }
 
 function createCustomTemplateId() {
-  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return `custom:${createId()}`;
   }
 
