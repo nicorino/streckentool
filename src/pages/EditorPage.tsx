@@ -19,7 +19,7 @@ import {
 import type { CourseRect } from "../types/CourseRect";
 import type { FigureInstance } from "../types/Figure";
 import { DEFAULT_CONE_COLOR } from "../types/Figure";
-import type { Decoration } from "../types/Decoration";
+import type { ArrowKind, Decoration } from "../types/Decoration";
 import type { Measurement } from "../types/Measurement";
 import type { CourseBackgroundImage } from "../types/CourseBackgroundImage";
 import type { ProjectMetadata } from "../types/ProjectMetadata";
@@ -225,6 +225,37 @@ export function EditorPage() {
     editorHistory.set((currentState) => ({
       ...currentState,
       decorations: [...currentState.decorations, textDecoration],
+    }));
+
+    setSelection({
+      type: "decoration",
+      id,
+    });
+  }
+
+
+  function addArrow(arrowKind: ArrowKind) {
+    const id = crypto.randomUUID();
+
+    const isLongArrow = arrowKind === "straight-long";
+    const isCurveArrow =
+      arrowKind === "curve-right" || arrowKind === "curve-left";
+
+    const arrowDecoration: Decoration = {
+      id,
+      type: "arrow",
+      x: exportBounds.left + 2,
+      y: exportBounds.top + 2,
+      width: isLongArrow ? 9 : isCurveArrow ? 5 : 5,
+      height: isCurveArrow ? 4 : 1.2,
+      rotation: 0,
+      arrowKind,
+      color: "#000000",
+    };
+
+    editorHistory.set((currentState) => ({
+      ...currentState,
+      decorations: [...currentState.decorations, arrowDecoration],
     }));
 
     setSelection({
@@ -802,6 +833,7 @@ export function EditorPage() {
       <TopToolbar
         onAddRectangle={addRectangle}
         onAddText={addText}
+        onAddArrow={addArrow}
         onImportImageFile={importImageFile}
         onImportBackgroundImageFile={importBackgroundImageFile}
         onClearBackgroundImage={clearBackgroundImage}

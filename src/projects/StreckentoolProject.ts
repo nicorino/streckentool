@@ -324,6 +324,16 @@ function isDecoration(value: unknown): value is Decoration {
     return typeof value.src === "string" && typeof value.name === "string";
   }
 
+  if (value.type === "arrow") {
+    return (
+      typeof value.color === "string" &&
+      (value.arrowKind === "straight" ||
+        value.arrowKind === "straight-long" ||
+        value.arrowKind === "curve-right" ||
+        value.arrowKind === "curve-left")
+    );
+  }
+
   return false;
 }
 

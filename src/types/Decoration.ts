@@ -1,3 +1,9 @@
+export type ArrowKind =
+  | "straight"
+  | "straight-long"
+  | "curve-right"
+  | "curve-left";
+
 export type TextDecoration = {
   id: string;
   type: "text";
@@ -23,8 +29,21 @@ export type ImageDecoration = {
   name: string;
 };
 
-export type Decoration = TextDecoration | ImageDecoration;
+export type ArrowDecoration = {
+  id: string;
+  type: "arrow";
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
+  arrowKind: ArrowKind;
+  color: string;
+};
+
+export type Decoration = TextDecoration | ImageDecoration | ArrowDecoration;
 
 export type DecorationPatch =
   | Partial<TextDecoration>
-  | Partial<ImageDecoration>;
+  | Partial<ImageDecoration>
+  | Partial<ArrowDecoration>;

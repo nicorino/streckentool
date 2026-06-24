@@ -1,6 +1,15 @@
 import { useEffect, useState } from "react";
-import { Group, Image as KonvaImage, Layer, Rect, Text } from "react-konva";
-import type { Decoration } from "../types/Decoration";
+import {
+  Arrow,
+  Group,
+  Line,
+  Image as KonvaImage,
+  Layer,
+  Path,
+  Rect,
+  Text,
+} from "react-konva";
+import type { ArrowDecoration, Decoration } from "../types/Decoration";
 import type { Selection } from "../types/Selection";
 import {
   metersToPixels,
@@ -29,41 +38,19 @@ export function DecorationLayer({
   return (
     <Layer>
       {decorations.map((decoration) => {
+        const isSelected =
+          selection?.type === "decoration" && selection.id === decoration.id;
+
         if (decoration.type === "text") {
-          const isSelected =
-            selection?.type === "decoration" && selection.id === decoration.id;
-
           return (
-            <Group
+            <MovableDecorationGroup
               key={decoration.id}
-              x={metersToPixels(decoration.x)}
-              y={metersToPixels(decoration.y)}
-              rotation={decoration.rotation}
-              draggable
-              onClick={(event) => {
-                event.cancelBubble = true;
-                onSelect({ type: "decoration", id: decoration.id });
-              }}
-              onTap={(event) => {
-                event.cancelBubble = true;
-                onSelect({ type: "decoration", id: decoration.id });
-              }}
-              onDragMove={(event) => {
-                if (!snapToGrid) return;
-
-                event.target.x(snapPixels(event.target.x()));
-                event.target.y(snapPixels(event.target.y()));
-              }}
-              onDragEnd={(event) => {
-                const nextX = pixelsToMeters(event.target.x());
-                const nextY = pixelsToMeters(event.target.y());
-
-                onUpdateDecoration({
-                  ...decoration,
-                  x: snapToGrid ? snapMeters(nextX) : nextX,
-                  y: snapToGrid ? snapMeters(nextY) : nextY,
-                });
-              }}
+              decoration={decoration}
+              onSelect={() =>
+                onSelect({ type: "decoration", id: decoration.id })
+              }
+              onUpdateDecoration={onUpdateDecoration}
+              snapToGrid={snapToGrid}
             >
               <Rect
                 x={0}
@@ -85,37 +72,241 @@ export function DecorationLayer({
               />
 
               {showEditorDecorations && isSelected && (
-                <Rect
-                  x={0}
-                  y={0}
-                  width={metersToPixels(decoration.width)}
-                  height={metersToPixels(decoration.height)}
-                  stroke="#1976d2"
-                  strokeWidth={2}
-                  dash={[6, 4]}
-                />
+                <SelectionRect decoration={decoration} />
               )}
-            </Group>
+            </MovableDecorationGroup>
+          );
+        }
+
+        if (decoration.type === "image") {
+          return (
+            <ImageDecorationNode
+              key={decoration.id}
+              decoration={decoration}
+              isSelected={isSelected}
+              onSelect={() =>
+                onSelect({ type: "decoration", id: decoration.id })
+              }
+              onUpdateDecoration={onUpdateDecoration}
+              snapToGrid={snapToGrid}
+              showEditorDecorations={showEditorDecorations}
+            />
           );
         }
 
         return (
-          <ImageDecorationNode
+          <MovableDecorationGroup
             key={decoration.id}
             decoration={decoration}
-            isSelected={
-              selection?.type === "decoration" && selection.id === decoration.id
-            }
-            onSelect={() =>
-              onSelect({ type: "decoration", id: decoration.id })
-            }
+            onSelect={() => onSelect({ type: "decoration", id: decoration.id })}
             onUpdateDecoration={onUpdateDecoration}
             snapToGrid={snapToGrid}
-            showEditorDecorations={showEditorDecorations}
-          />
+          >
+            <Rect
+              x={0}
+              y={0}
+              width={metersToPixels(decoration.width)}
+              height={metersToPixels(decoration.height)}
+              fill="rgba(255,255,255,0.01)"
+            />
+
+            <ArrowShape decoration={decoration} />
+
+            {showEditorDecorations && isSelected && (
+              <SelectionRect decoration={decoration} />
+            )}
+          </MovableDecorationGroup>
         );
       })}
     </Layer>
+  );
+}
+
+type MovableDecorationGroupProps = {
+  decoration: Decoration;
+  children: React.ReactNode;
+  onSelect: () => void;
+  onUpdateDecoration: (decoration: Decoration) => void;
+  snapToGrid: boolean;
+};
+
+function MovableDecorationGroup({
+  decoration,
+  children,
+  onSelect,
+  onUpdateDecoration,
+  snapToGrid,
+}: MovableDecorationGroupProps) {
+  return (
+    <Group
+      x={metersToPixels(decoration.x)}
+      y={metersToPixels(decoration.y)}
+      rotation={decoration.rotation}
+      draggable
+      onClick={(event) => {
+        event.cancelBubble = true;
+        onSelect();
+      }}
+      onTap={(event) => {
+        event.cancelBubble = true;
+        onSelect();
+      }}
+      onDragMove={(event) => {
+        if (!snapToGrid) return;
+
+        event.target.x(snapPixels(event.target.x()));
+        event.target.y(snapPixels(event.target.y()));
+      }}
+      onDragEnd={(event) => {
+        const nextX = pixelsToMeters(event.target.x());
+        const nextY = pixelsToMeters(event.target.y());
+
+        onUpdateDecoration({
+          ...decoration,
+          x: snapToGrid ? snapMeters(nextX) : nextX,
+          y: snapToGrid ? snapMeters(nextY) : nextY,
+        });
+      }}
+    >
+      {children}
+    </Group>
+  );
+}
+
+function ArrowShape({ decoration }: { decoration: ArrowDecoration }) {
+  const width = metersToPixels(decoration.width);
+  const height = metersToPixels(decoration.height);
+  const strokeWidth = 4;
+  const color = decoration.color;
+
+  if (decoration.arrowKind === "curve-right") {
+    const startX = width * 0.18;
+    const startY = height * 0.92;
+    const control1X = width * 0.12;
+    const control1Y = height * 0.55;
+    const control2X = width * 0.42;
+    const control2Y = height * 0.22;
+    const endX = width * 0.88;
+    const endY = height * 0.22;
+
+    const arrowLength = 20;
+    const arrowHalfHeight = 10;
+
+    return (
+      <>
+        <Path
+          data={`M ${startX} ${startY} C ${control1X} ${control1Y}, ${control2X} ${control2Y}, ${endX} ${endY}`}
+          stroke={color}
+          strokeWidth={strokeWidth}
+          lineCap="round"
+          lineJoin="round"
+        />
+
+        <Line
+          points={[
+            endX,
+            endY,
+            endX - arrowLength,
+            endY - arrowHalfHeight,
+            endX - arrowLength * 0.72,
+            endY,
+            endX - arrowLength,
+            endY + arrowHalfHeight,
+          ]}
+          closed
+          fill={color}
+          stroke={color}
+          strokeWidth={1}
+          lineJoin="round"
+        />
+      </>
+    );
+  }
+
+  if (decoration.arrowKind === "curve-left") {
+    const startX = width * 0.82;
+    const startY = height * 0.92;
+    const control1X = width * 0.88;
+    const control1Y = height * 0.55;
+    const control2X = width * 0.58;
+    const control2Y = height * 0.22;
+    const endX = width * 0.12;
+    const endY = height * 0.22;
+
+    const arrowLength = 20;
+    const arrowHalfHeight = 10;
+
+    return (
+      <>
+        <Path
+          data={`M ${startX} ${startY} C ${control1X} ${control1Y}, ${control2X} ${control2Y}, ${endX} ${endY}`}
+          stroke={color}
+          strokeWidth={strokeWidth}
+          lineCap="round"
+          lineJoin="round"
+        />
+
+        <Line
+          points={[
+            endX,
+            endY,
+            endX + arrowLength,
+            endY - arrowHalfHeight,
+            endX + arrowLength * 0.72,
+            endY,
+            endX + arrowLength,
+            endY + arrowHalfHeight,
+          ]}
+          closed
+          fill={color}
+          stroke={color}
+          strokeWidth={1}
+          lineJoin="round"
+        />
+      </>
+    );
+  }
+
+  if (decoration.arrowKind === "straight-long") {
+    return (
+      <Arrow
+        points={[0, height / 2, width, height / 2]}
+        stroke={color}
+        fill={color}
+        strokeWidth={strokeWidth}
+        pointerLength={16}
+        pointerWidth={16}
+        lineCap="round"
+        lineJoin="round"
+      />
+    );
+  }
+
+  return (
+    <Arrow
+      points={[0, height / 2, width, height / 2]}
+      stroke={color}
+      fill={color}
+      strokeWidth={strokeWidth}
+      pointerLength={14}
+      pointerWidth={14}
+      lineCap="round"
+      lineJoin="round"
+    />
+  );
+}
+
+function SelectionRect({ decoration }: { decoration: Decoration }) {
+  return (
+    <Rect
+      x={0}
+      y={0}
+      width={metersToPixels(decoration.width)}
+      height={metersToPixels(decoration.height)}
+      stroke="#1976d2"
+      strokeWidth={2}
+      dash={[6, 4]}
+    />
   );
 }
 
@@ -157,35 +348,11 @@ function ImageDecorationNode({
   }, [decoration.src]);
 
   return (
-    <Group
-      x={metersToPixels(decoration.x)}
-      y={metersToPixels(decoration.y)}
-      rotation={decoration.rotation}
-      draggable
-      onClick={(event) => {
-        event.cancelBubble = true;
-        onSelect();
-      }}
-      onTap={(event) => {
-        event.cancelBubble = true;
-        onSelect();
-      }}
-      onDragMove={(event) => {
-        if (!snapToGrid) return;
-
-        event.target.x(snapPixels(event.target.x()));
-        event.target.y(snapPixels(event.target.y()));
-      }}
-      onDragEnd={(event) => {
-        const nextX = pixelsToMeters(event.target.x());
-        const nextY = pixelsToMeters(event.target.y());
-
-        onUpdateDecoration({
-          ...decoration,
-          x: snapToGrid ? snapMeters(nextX) : nextX,
-          y: snapToGrid ? snapMeters(nextY) : nextY,
-        });
-      }}
+    <MovableDecorationGroup
+      decoration={decoration}
+      onSelect={onSelect}
+      onUpdateDecoration={onUpdateDecoration}
+      snapToGrid={snapToGrid}
     >
       {imageElement ? (
         <KonvaImage
@@ -207,16 +374,8 @@ function ImageDecorationNode({
       )}
 
       {showEditorDecorations && isSelected && (
-        <Rect
-          x={0}
-          y={0}
-          width={metersToPixels(decoration.width)}
-          height={metersToPixels(decoration.height)}
-          stroke="#1976d2"
-          strokeWidth={2}
-          dash={[6, 4]}
-        />
+        <SelectionRect decoration={decoration} />
       )}
-    </Group>
+    </MovableDecorationGroup>
   );
 }

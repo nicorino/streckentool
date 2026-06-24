@@ -1,5 +1,6 @@
 import { useState, type ChangeEvent, type ReactNode } from "react";
 import type { ExportFormat } from "../export/getProjectBounds";
+import type { ArrowKind } from "../types/Decoration";
 import {
   SUPPORTED_LANGUAGES,
   type AppLanguage,
@@ -16,6 +17,7 @@ const WIKI_URL = "https://example.com/wiki-placeholder";
 type TopToolbarProps = {
   onAddRectangle: () => void;
   onAddText: () => void;
+  onAddArrow: (arrowKind: ArrowKind) => void;
   onImportImageFile: (file: File) => void;
   onImportBackgroundImageFile: (file: File) => void;
   onClearBackgroundImage: () => void;
@@ -62,6 +64,7 @@ export function TopToolbar({
   onImportCreatorJson,
   onAddRectangle,
   onAddText,
+  onAddArrow,
   onImportImageFile,
   onImportBackgroundImageFile,
   onClearBackgroundImage,
@@ -295,6 +298,22 @@ export function TopToolbar({
                   style={{ display: "none" }}
                 />
               </label>
+            </ToolbarSection>
+
+            <ToolbarSection>
+              <button onClick={() => onAddArrow("straight")}>Arrow</button>
+
+              <button onClick={() => onAddArrow("straight-long")}>
+                Long arrow
+              </button>
+
+              <button onClick={() => onAddArrow("curve-right")}>
+                Curve right
+              </button>
+
+              <button onClick={() => onAddArrow("curve-left")}>
+                Curve left
+              </button>
             </ToolbarSection>
 
             <ToolbarSection>
