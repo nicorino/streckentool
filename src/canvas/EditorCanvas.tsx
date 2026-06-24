@@ -169,6 +169,16 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, EditorCanvasProps>(
         const stage = stageRef.current;
         if (!stage) return;
 
+        const width = Math.max(
+          1,
+          Math.ceil(metersToPixels(boundsMeters.right - boundsMeters.left))
+        );
+
+        const height = Math.max(
+          1,
+          Math.ceil(metersToPixels(boundsMeters.bottom - boundsMeters.top))
+        );
+
         setActiveExportBounds(boundsMeters);
         setIsExporting(true);
 
@@ -176,25 +186,9 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, EditorCanvasProps>(
         await waitForNextFrame();
 
         try {
-          const x = Math.max(0, metersToPixels(boundsMeters.left));
-          const y = Math.max(0, metersToPixels(boundsMeters.top));
-
-          const requestedWidth = metersToPixels(
-            boundsMeters.right - boundsMeters.left
-          );
-          const requestedHeight = metersToPixels(
-            boundsMeters.bottom - boundsMeters.top
-          );
-
-          const width = Math.max(1, Math.min(requestedWidth, stage.width() - x));
-          const height = Math.max(
-            1,
-            Math.min(requestedHeight, stage.height() - y)
-          );
-
           const dataUrl = stage.toDataURL({
-            x,
-            y,
+            x: 0,
+            y: 0,
             width,
             height,
             pixelRatio,
@@ -338,8 +332,37 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, EditorCanvasProps>(
     const effectiveShowEditorDecorations =
       showEditorDecorations && !isExporting;
 
+    const exportStageSize =
+      isExporting && activeExportBounds
+        ? {
+            width: Math.max(
+              1,
+              Math.ceil(
+                metersToPixels(
+                  activeExportBounds.right - activeExportBounds.left
+                )
+              )
+            ),
+            height: Math.max(
+              1,
+              Math.ceil(
+                metersToPixels(
+                  activeExportBounds.bottom - activeExportBounds.top
+                )
+              )
+            ),
+          }
+        : stageSize;
+
     const effectiveZoom = isExporting ? 1 : zoom;
-    const effectiveViewPosition = isExporting ? { x: 0, y: 0 } : viewPosition;
+
+    const effectiveViewPosition =
+      isExporting && activeExportBounds
+        ? {
+            x: -metersToPixels(activeExportBounds.left),
+            y: -metersToPixels(activeExportBounds.top),
+          }
+        : viewPosition;
 
     return (
       <main
@@ -357,8 +380,8 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, EditorCanvasProps>(
       >
         <Stage
           ref={stageRef}
-          width={stageSize.width}
-          height={stageSize.height}
+          width={exportStageSize.width}
+          height={exportStageSize.height}
           x={effectiveViewPosition.x}
           y={effectiveViewPosition.y}
           scaleX={effectiveZoom}
@@ -372,10 +395,10 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, EditorCanvasProps>(
         >
           <Layer listening={false}>
             <Rect
-              x={0}
-              y={0}
-              width={metersToPixels(WORLD_SIZE_METERS)}
-              height={metersToPixels(WORLD_SIZE_METERS)}
+              x={-metersToPixels(WORLD_SIZE_METERS)}
+              y={-metersToPixels(WORLD_SIZE_METERS)}
+              width={metersToPixels(WORLD_SIZE_METERS * 2)}
+              height={metersToPixels(WORLD_SIZE_METERS * 2)}
               fill="#ffffff"
             />
           </Layer>
