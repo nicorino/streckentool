@@ -128,10 +128,16 @@ export function TopToolbar({
 
   return (
     <header style={toolbarStyle}>
+      <div title={t("appName")} style={toolbarLogoAreaStyle}>
+        <img
+          src="/streckentool-logo.png"
+          alt={t("appName")}
+          style={toolbarLogoImageStyle}
+        />
+      </div>
+
       <div style={topRowStyle}>
         <div style={leftControlsStyle}>
-          <strong style={{ marginRight: 8 }}>{t("appName")}</strong>
-
           <ToolbarSection>
             <ToolButton
               active={activeTool === "select"}
@@ -504,7 +510,8 @@ function ToolbarLink({
 }
 
 const toolbarStyle = {
-  height: 86,
+  height: 94,
+  position: "relative" as const,
   display: "flex",
   flexDirection: "column" as const,
   borderBottom: "1px solid var(--st-border)",
@@ -515,8 +522,37 @@ const toolbarStyle = {
   overflow: "hidden",
 };
 
+const toolbarLogoAreaStyle = {
+  position: "absolute" as const,
+  left: 0,
+  top: 0,
+  width: 270,
+  height: 94,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-start",
+  boxSizing: "border-box" as const,
+  padding: "6px 24px 6px 10px",
+  border: "none",
+  background:
+    "linear-gradient(90deg, #1b1c20 0%, #1b1c20 48%, rgba(27, 28, 32, 0.96) 58%, rgba(27, 28, 32, 0.65) 76%, rgba(27, 28, 32, 0.22) 90%, var(--st-surface) 100%)",
+  overflow: "hidden",
+  flexShrink: 0,
+  textDecoration: "none",
+  zIndex: 2,
+};
+
+const toolbarLogoImageStyle = {
+  display: "block",
+  width: 150,
+  height: 82,
+  objectFit: "contain" as const,
+};
+
 const topRowStyle = {
-  height: 42,
+  height: 47,
+  marginLeft: 270,
+  width: "calc(100% - 270px)",
   position: "relative" as const,
   display: "flex",
   alignItems: "center",
@@ -528,7 +564,9 @@ const topRowStyle = {
 };
 
 const subRowStyle = {
-  height: 44,
+  height: 47,
+  marginLeft: 270,
+  width: "calc(100% - 270px)",
   display: "flex",
   alignItems: "center",
   gap: 8,
