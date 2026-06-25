@@ -299,10 +299,10 @@ function SelectionRect({ decoration }: { decoration: Decoration }) {
   );
 }
 
-type ArrowDecoration = Extract<Decoration, { type: "arrow" }>;
+type ArrowDecorationItem = Extract<Decoration, { type: "arrow" }>;
 
 type ArrowDecorationNodeProps = {
-  decoration: ArrowDecoration;
+  decoration: ArrowDecorationItem;
   isSelected: boolean;
   onSelect: () => void;
   onUpdateDecoration: (decoration: Decoration) => void;
