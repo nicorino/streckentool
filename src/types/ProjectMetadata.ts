@@ -10,6 +10,9 @@ export type ProjectMetadata = {
   projectLogoSrc: string;
   projectLogoName: string;
   projectLogoWidth: number;
+  titleBlockWidth: number;
+  titleBlockTitleFontSize: number;
+  titleBlockBodyFontSize: number;
 };
 
 export function createDefaultProjectMetadata(): ProjectMetadata {
@@ -25,5 +28,8 @@ export function createDefaultProjectMetadata(): ProjectMetadata {
     projectLogoSrc: "",
     projectLogoName: "",
     projectLogoWidth: 150,
+    titleBlockWidth: 340,
+    titleBlockTitleFontSize: 18,
+    titleBlockBodyFontSize: 12,
   };
 }

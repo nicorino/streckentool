@@ -123,11 +123,11 @@ export function ProjectMetadataPanel({
                 label={`${t("projectLogoWidth")} (px)`}
                 value={metadata.projectLogoWidth}
                 min={40}
-                max={300}
+                max={1000}
                 step={5}
                 onChange={(value) =>
                   onUpdateMetadata({
-                    projectLogoWidth: Math.max(40, Math.min(300, value)),
+                    projectLogoWidth: Math.max(40, Math.min(1000, value)),
                   })
                 }
               />
@@ -148,6 +148,45 @@ export function ProjectMetadataPanel({
           </label>
 
           <SectionTitle>{t("exportInformation")}</SectionTitle>
+
+          <NumberInput
+            label={`${t("titleBlockWidth")} (px)`}
+            value={metadata.titleBlockWidth}
+            min={220}
+            max={900}
+            step={10}
+            onChange={(value) =>
+              onUpdateMetadata({
+                titleBlockWidth: Math.max(220, Math.min(900, value)),
+              })
+            }
+          />
+
+          <NumberInput
+            label={`${t("titleBlockTitleFontSize")} (px)`}
+            value={metadata.titleBlockTitleFontSize}
+            min={10}
+            max={48}
+            step={1}
+            onChange={(value) =>
+              onUpdateMetadata({
+                titleBlockTitleFontSize: Math.max(10, Math.min(48, value)),
+              })
+            }
+          />
+
+          <NumberInput
+            label={`${t("titleBlockBodyFontSize")} (px)`}
+            value={metadata.titleBlockBodyFontSize}
+            min={8}
+            max={32}
+            step={1}
+            onChange={(value) =>
+              onUpdateMetadata({
+                titleBlockBodyFontSize: Math.max(8, Math.min(32, value)),
+              })
+            }
+          />
 
           <label style={labelStyle}>
             {t("notes")}

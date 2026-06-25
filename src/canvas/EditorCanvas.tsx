@@ -63,6 +63,8 @@ type EditorCanvasProps = {
   metadata: ProjectMetadata;
   pendingMeasurementStart: CanvasPoint | null;
   pendingCalibrationStart: CanvasPoint | null;
+  pendingFigureTemplateId: string | null;
+  onPlacePendingFigure: (point: CanvasPoint) => void;
   activeTool: EditorTool;
   figureTemplates: FigureTemplate[];
   selection: Selection | null;
@@ -101,6 +103,8 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, EditorCanvasProps>(
       metadata,
       pendingMeasurementStart,
       pendingCalibrationStart,
+      pendingFigureTemplateId,
+      onPlacePendingFigure,
       activeTool,
       figureTemplates,
       selection,
@@ -260,6 +264,16 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, EditorCanvasProps>(
     }
 
     function handleMouseDown(event: Konva.KonvaEventObject<MouseEvent>) {
+      if (pendingFigureTemplateId && event.evt.button === 0) {
+        const point = getWorldPointerPosition();
+
+        if (point) {
+          onPlacePendingFigure(point);
+        }
+
+        return;
+      }
+
       if (
         (activeTool === "measure" || activeTool === "calibrate") &&
         event.evt.button === 0
@@ -373,7 +387,9 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, EditorCanvasProps>(
           overflow: "hidden",
           background: "#fff",
           cursor:
-            activeTool === "measure" || activeTool === "calibrate"
+            pendingFigureTemplateId ||
+            activeTool === "measure" ||
+            activeTool === "calibrate"
               ? "crosshair"
               : "grab",
         }}

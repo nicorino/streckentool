@@ -202,6 +202,21 @@ function normalizeProjectMetadata(
       Number.isFinite(metadata.projectLogoWidth)
         ? metadata.projectLogoWidth
         : defaults.projectLogoWidth,
+    titleBlockWidth:
+      typeof metadata.titleBlockWidth === "number" &&
+      Number.isFinite(metadata.titleBlockWidth)
+        ? metadata.titleBlockWidth
+        : defaults.titleBlockWidth,
+    titleBlockTitleFontSize:
+      typeof metadata.titleBlockTitleFontSize === "number" &&
+      Number.isFinite(metadata.titleBlockTitleFontSize)
+        ? metadata.titleBlockTitleFontSize
+        : defaults.titleBlockTitleFontSize,
+    titleBlockBodyFontSize:
+      typeof metadata.titleBlockBodyFontSize === "number" &&
+      Number.isFinite(metadata.titleBlockBodyFontSize)
+        ? metadata.titleBlockBodyFontSize
+        : defaults.titleBlockBodyFontSize,
   };
 }
 
@@ -444,7 +459,13 @@ function isProjectMetadata(value: unknown): value is PersistedProjectMetadata {
     (value.projectLogoName === undefined ||
       typeof value.projectLogoName === "string") &&
     (value.projectLogoWidth === undefined ||
-      typeof value.projectLogoWidth === "number")
+      typeof value.projectLogoWidth === "number") &&
+    (value.titleBlockWidth === undefined ||
+      typeof value.titleBlockWidth === "number") &&
+    (value.titleBlockTitleFontSize === undefined ||
+      typeof value.titleBlockTitleFontSize === "number") &&
+    (value.titleBlockBodyFontSize === undefined ||
+      typeof value.titleBlockBodyFontSize === "number")
   );
 }
 

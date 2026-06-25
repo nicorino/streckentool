@@ -121,6 +121,14 @@ function FigureNode({
   ]);
 
   const bounds = getTemplateBounds(template);
+  const hitboxPaddingMeters = 0.6;
+
+  const hitboxBounds = {
+    left: bounds.left - hitboxPaddingMeters,
+    top: bounds.top - hitboxPaddingMeters,
+    right: bounds.right + hitboxPaddingMeters,
+    bottom: bounds.bottom + hitboxPaddingMeters,
+  };
 
   return (
     <>
@@ -170,6 +178,15 @@ function FigureNode({
           });
         }}
       >
+        <Rect
+          x={metersToPixels(hitboxBounds.left)}
+          y={metersToPixels(hitboxBounds.top)}
+          width={metersToPixels(hitboxBounds.right - hitboxBounds.left)}
+          height={metersToPixels(hitboxBounds.bottom - hitboxBounds.top)}
+          fill="rgba(0,0,0,0.001)"
+          strokeWidth={0}
+        />
+
         {showEditorDecorations && isSelected && (
           <Rect
             x={metersToPixels(bounds.left)}

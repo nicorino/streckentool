@@ -69,9 +69,18 @@ export function TitleBlockLayer({
   const right = metersToPixels(boundsMeters.right) - 12;
   const top = metersToPixels(boundsMeters.top) + 12;
 
-  const width = 340;
-  const titleHeight = 24;
-  const lineHeight = 18;
+  const width = Math.max(220, Math.min(900, metadata.titleBlockWidth || 340));
+  const titleFontSize = Math.max(
+    10,
+    Math.min(48, metadata.titleBlockTitleFontSize || 18)
+  );
+  const bodyFontSize = Math.max(
+    8,
+    Math.min(32, metadata.titleBlockBodyFontSize || 12)
+  );
+
+  const titleHeight = titleFontSize * 1.35;
+  const lineHeight = bodyFontSize * 1.5;
   const padding = 10;
 
   const lineCount = Math.max(1, bodyText.split("\n").filter(Boolean).length);
@@ -84,7 +93,7 @@ export function TitleBlockLayer({
 
   const logoWidth = Math.max(
     40,
-    Math.min(300, metadata.projectLogoWidth || 150)
+    Math.min(1000, metadata.projectLogoWidth || 150)
   );
   const logoHeight = logoWidth * logoRatio;
 
@@ -108,7 +117,7 @@ export function TitleBlockLayer({
             y={y + padding}
             width={width - padding * 2}
             text={title}
-            fontSize={18}
+            fontSize={titleFontSize}
             fontStyle="bold"
             fill="#111"
           />
@@ -122,7 +131,7 @@ export function TitleBlockLayer({
                 ? bodyText
                 : "Project information can be edited in the project info menu."
             }
-            fontSize={12}
+            fontSize={bodyFontSize}
             lineHeight={1.35}
             fill="#333"
           />

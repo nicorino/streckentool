@@ -93,6 +93,8 @@ export function EditorPage() {
     useState<ExportFormat>("a4-landscape");
 
   const [activeTool, setActiveTool] = useState<EditorTool>("select");
+  const [pendingFigureTemplateId, setPendingFigureTemplateId] =
+    useState<string | null>(null);
   const [pendingMeasurementStart, setPendingMeasurementStart] =
     useState<CanvasPoint | null>(null);
   const [pendingCalibrationStart, setPendingCalibrationStart] =
@@ -187,6 +189,19 @@ export function EditorPage() {
   }
 
   function addFigure(templateId: string) {
+    setPendingFigureTemplateId(templateId);
+    setActiveTool("select");
+    setSelection(null);
+    setPendingMeasurementStart(null);
+    setPendingCalibrationStart(null);
+    setCalibrationDraft(null);
+  }
+
+  function placePendingFigure(point: CanvasPoint) {
+    if (!pendingFigureTemplateId) {
+      return;
+    }
+
     const id = createId();
 
     editorHistory.set((currentState) => ({
@@ -195,9 +210,9 @@ export function EditorPage() {
         ...currentState.figures,
         {
           id,
-          templateId,
-          x: 10,
-          y: 10,
+          templateId: pendingFigureTemplateId,
+          x: point.x,
+          y: point.y,
           rotation: 0,
           mirrored: false,
           coneColor: DEFAULT_CONE_COLOR,
@@ -209,6 +224,9 @@ export function EditorPage() {
       type: "figure",
       id,
     });
+
+    setPendingFigureTemplateId(null);
+    setActiveTool("select");
   }
 
   function addText() {
@@ -421,6 +439,7 @@ export function EditorPage() {
     setExportFormat("a4-landscape");
 
     setActiveTool("select");
+    setPendingFigureTemplateId(null);
     setPendingMeasurementStart(null);
     setPendingCalibrationStart(null);
     setCalibrationDraft(null);
@@ -706,6 +725,7 @@ export function EditorPage() {
 
   function changeActiveTool(tool: EditorTool) {
     setActiveTool(tool);
+    setPendingFigureTemplateId(null);
     setPendingMeasurementStart(null);
     setPendingCalibrationStart(null);
     setCalibrationDraft(null);
@@ -714,6 +734,7 @@ export function EditorPage() {
   function undo() {
     editorHistory.undo();
     setSelection(null);
+    setPendingFigureTemplateId(null);
     setPendingMeasurementStart(null);
     setPendingCalibrationStart(null);
     setCalibrationDraft(null);
@@ -722,6 +743,7 @@ export function EditorPage() {
   function redo() {
     editorHistory.redo();
     setSelection(null);
+    setPendingFigureTemplateId(null);
     setPendingMeasurementStart(null);
     setPendingCalibrationStart(null);
     setCalibrationDraft(null);
@@ -763,6 +785,7 @@ export function EditorPage() {
 
       editorHistory.reset(nextState);
       setSelection(null);
+      setPendingFigureTemplateId(null);
       setPendingMeasurementStart(null);
       setPendingCalibrationStart(null);
       setCalibrationDraft(null);
@@ -818,6 +841,7 @@ export function EditorPage() {
       if (key === "escape") {
         setPendingMeasurementStart(null);
         setPendingCalibrationStart(null);
+        setPendingFigureTemplateId(null);
         setCalibrationDraft(null);
         setShowNewProjectDialog(false);
         setActiveTool("select");
@@ -915,6 +939,8 @@ export function EditorPage() {
             metadata={metadata}
             pendingMeasurementStart={pendingMeasurementStart}
             pendingCalibrationStart={pendingCalibrationStart}
+            pendingFigureTemplateId={pendingFigureTemplateId}
+            onPlacePendingFigure={placePendingFigure}
             activeTool={activeTool}
             figureTemplates={figureTemplates}
             selection={selection}
