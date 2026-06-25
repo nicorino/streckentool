@@ -9,7 +9,7 @@ import Konva from "konva";
 import { Stage, Layer, Rect, Transformer, Text } from "react-konva";
 import type { CourseRect } from "../types/CourseRect";
 import type { FigureInstance, FigureTemplate } from "../types/Figure";
-import type { Decoration } from "../types/Decoration";
+import type { ArrowKind, Decoration } from "../types/Decoration";
 import type { Measurement } from "../types/Measurement";
 import type { CourseBackgroundImage } from "../types/CourseBackgroundImage";
 import type { ProjectMetadata } from "../types/ProjectMetadata";
@@ -65,6 +65,8 @@ type EditorCanvasProps = {
   pendingCalibrationStart: CanvasPoint | null;
   pendingFigureTemplateId: string | null;
   onPlacePendingFigure: (point: CanvasPoint) => void;
+  pendingArrowKind: ArrowKind | null;
+  onPlacePendingArrow: (point: CanvasPoint) => void;
   activeTool: EditorTool;
   figureTemplates: FigureTemplate[];
   selection: Selection | null;
@@ -105,6 +107,8 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, EditorCanvasProps>(
       pendingCalibrationStart,
       pendingFigureTemplateId,
       onPlacePendingFigure,
+      pendingArrowKind,
+      onPlacePendingArrow,
       activeTool,
       figureTemplates,
       selection,
@@ -264,6 +268,16 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, EditorCanvasProps>(
     }
 
     function handleMouseDown(event: Konva.KonvaEventObject<MouseEvent>) {
+      if (pendingArrowKind && event.evt.button === 0) {
+        const point = getWorldPointerPosition();
+
+        if (point) {
+          onPlacePendingArrow(point);
+        }
+
+        return;
+      }
+
       if (pendingFigureTemplateId && event.evt.button === 0) {
         const point = getWorldPointerPosition();
 
@@ -387,6 +401,7 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, EditorCanvasProps>(
           overflow: "hidden",
           background: "#fff",
           cursor:
+            pendingArrowKind ||
             pendingFigureTemplateId ||
             activeTool === "measure" ||
             activeTool === "calibrate"

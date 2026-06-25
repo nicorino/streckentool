@@ -93,6 +93,8 @@ export function EditorPage() {
     useState<ExportFormat>("a4-landscape");
 
   const [activeTool, setActiveTool] = useState<EditorTool>("select");
+  const [pendingArrowKind, setPendingArrowKind] =
+    useState<ArrowKind | null>(null);
   const [pendingFigureTemplateId, setPendingFigureTemplateId] =
     useState<string | null>(null);
   const [pendingMeasurementStart, setPendingMeasurementStart] =
@@ -258,21 +260,34 @@ export function EditorPage() {
 
 
   function addArrow(arrowKind: ArrowKind) {
+    setPendingArrowKind(arrowKind);
+    setActiveTool("select");
+    setSelection(null);
+    setPendingMeasurementStart(null);
+    setPendingCalibrationStart(null);
+    setCalibrationDraft(null);
+  }
+
+  function placePendingArrow(point: CanvasPoint) {
+    if (!pendingArrowKind) {
+      return;
+    }
+
     const id = createId();
 
-    const isLongArrow = arrowKind === "straight-long";
+    const isLongArrow = pendingArrowKind === "straight-long";
     const isCurveArrow =
-      arrowKind === "curve-right" || arrowKind === "curve-left";
+      pendingArrowKind === "curve-right" || pendingArrowKind === "curve-left";
 
     const arrowDecoration: Decoration = {
       id,
       type: "arrow",
-      x: exportBounds.left + 2,
-      y: exportBounds.top + 2,
+      x: point.x,
+      y: point.y,
       width: isLongArrow ? 9 : isCurveArrow ? 5 : 5,
       height: isCurveArrow ? 4 : 1.2,
       rotation: 0,
-      arrowKind,
+      arrowKind: pendingArrowKind,
       color: "#000000",
     };
 
@@ -285,6 +300,9 @@ export function EditorPage() {
       type: "decoration",
       id,
     });
+
+    setPendingArrowKind(null);
+    setActiveTool("select");
   }
 
   async function importImageFile(file: File) {
@@ -440,6 +458,7 @@ export function EditorPage() {
 
     setActiveTool("select");
     setPendingFigureTemplateId(null);
+    setPendingArrowKind(null);
     setPendingMeasurementStart(null);
     setPendingCalibrationStart(null);
     setCalibrationDraft(null);
@@ -726,6 +745,7 @@ export function EditorPage() {
   function changeActiveTool(tool: EditorTool) {
     setActiveTool(tool);
     setPendingFigureTemplateId(null);
+    setPendingArrowKind(null);
     setPendingMeasurementStart(null);
     setPendingCalibrationStart(null);
     setCalibrationDraft(null);
@@ -735,6 +755,7 @@ export function EditorPage() {
     editorHistory.undo();
     setSelection(null);
     setPendingFigureTemplateId(null);
+    setPendingArrowKind(null);
     setPendingMeasurementStart(null);
     setPendingCalibrationStart(null);
     setCalibrationDraft(null);
@@ -744,6 +765,7 @@ export function EditorPage() {
     editorHistory.redo();
     setSelection(null);
     setPendingFigureTemplateId(null);
+    setPendingArrowKind(null);
     setPendingMeasurementStart(null);
     setPendingCalibrationStart(null);
     setCalibrationDraft(null);
@@ -786,6 +808,7 @@ export function EditorPage() {
       editorHistory.reset(nextState);
       setSelection(null);
       setPendingFigureTemplateId(null);
+      setPendingArrowKind(null);
       setPendingMeasurementStart(null);
       setPendingCalibrationStart(null);
       setCalibrationDraft(null);
@@ -842,6 +865,7 @@ export function EditorPage() {
         setPendingMeasurementStart(null);
         setPendingCalibrationStart(null);
         setPendingFigureTemplateId(null);
+        setPendingArrowKind(null);
         setCalibrationDraft(null);
         setShowNewProjectDialog(false);
         setActiveTool("select");
@@ -941,6 +965,8 @@ export function EditorPage() {
             pendingCalibrationStart={pendingCalibrationStart}
             pendingFigureTemplateId={pendingFigureTemplateId}
             onPlacePendingFigure={placePendingFigure}
+            pendingArrowKind={pendingArrowKind}
+            onPlacePendingArrow={placePendingArrow}
             activeTool={activeTool}
             figureTemplates={figureTemplates}
             selection={selection}

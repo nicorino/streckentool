@@ -96,27 +96,15 @@ export function DecorationLayer({
         }
 
         return (
-          <MovableDecorationGroup
+          <ArrowDecorationNode
             key={decoration.id}
             decoration={decoration}
+            isSelected={isSelected}
             onSelect={() => onSelect({ type: "decoration", id: decoration.id })}
             onUpdateDecoration={onUpdateDecoration}
             snapToGrid={snapToGrid}
-          >
-            <Rect
-              x={0}
-              y={0}
-              width={metersToPixels(decoration.width)}
-              height={metersToPixels(decoration.height)}
-              fill="rgba(255,255,255,0.01)"
-            />
-
-            <ArrowShape decoration={decoration} />
-
-            {showEditorDecorations && isSelected && (
-              <SelectionRect decoration={decoration} />
-            )}
-          </MovableDecorationGroup>
+            showEditorDecorations={showEditorDecorations}
+          />
         );
       })}
     </Layer>
@@ -309,6 +297,155 @@ function SelectionRect({ decoration }: { decoration: Decoration }) {
       dash={[6, 4]}
     />
   );
+}
+
+type ArrowDecoration = Extract<Decoration, { type: "arrow" }>;
+
+type ArrowDecorationNodeProps = {
+  decoration: ArrowDecoration;
+  isSelected: boolean;
+  onSelect: () => void;
+  onUpdateDecoration: (decoration: Decoration) => void;
+  snapToGrid: boolean;
+  showEditorDecorations: boolean;
+};
+
+function ArrowDecorationNode({
+  decoration,
+  isSelected,
+  onSelect,
+  onUpdateDecoration,
+  snapToGrid,
+  showEditorDecorations,
+}: ArrowDecorationNodeProps) {
+  const groupRef = useRef<any>(null);
+  const transformerRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (!isSelected || !transformerRef.current || !groupRef.current) {
+      return;
+    }
+
+    transformerRef.current.nodes([groupRef.current]);
+    transformerRef.current.getLayer()?.batchDraw();
+  }, [isSelected, decoration.width, decoration.height, decoration.rotation]);
+
+  return (
+    <>
+      <Group
+        ref={groupRef}
+        x={metersToPixels(decoration.x)}
+        y={metersToPixels(decoration.y)}
+        rotation={decoration.rotation}
+        draggable
+        onClick={(event) => {
+          event.cancelBubble = true;
+          onSelect();
+        }}
+        onTap={(event) => {
+          event.cancelBubble = true;
+          onSelect();
+        }}
+        onDragMove={(event) => {
+          if (!snapToGrid) return;
+
+          event.target.x(snapPixels(event.target.x()));
+          event.target.y(snapPixels(event.target.y()));
+        }}
+        onDragEnd={(event) => {
+          const nextX = pixelsToMeters(event.target.x());
+          const nextY = pixelsToMeters(event.target.y());
+
+          onUpdateDecoration({
+            ...decoration,
+            x: snapToGrid ? snapMeters(nextX) : nextX,
+            y: snapToGrid ? snapMeters(nextY) : nextY,
+          });
+        }}
+        onTransformEnd={() => {
+          const node = groupRef.current;
+          if (!node) return;
+
+          const scaleX = Math.abs(node.scaleX());
+          const scaleY = Math.abs(node.scaleY());
+
+          const nextX = pixelsToMeters(node.x());
+          const nextY = pixelsToMeters(node.y());
+
+          node.scaleX(1);
+          node.scaleY(1);
+
+          onUpdateDecoration({
+            ...decoration,
+            x: snapToGrid ? snapMeters(nextX) : nextX,
+            y: snapToGrid ? snapMeters(nextY) : nextY,
+            width: Math.max(0.3, decoration.width * Math.max(scaleX, 0.01)),
+            height: Math.max(0.3, decoration.height * Math.max(scaleY, 0.01)),
+            rotation: normalizeRotation(node.rotation()),
+          });
+        }}
+      >
+        <Rect
+          x={0}
+          y={0}
+          width={metersToPixels(decoration.width)}
+          height={metersToPixels(decoration.height)}
+          fill="rgba(0,0,0,0.001)"
+        />
+
+        <ArrowShape decoration={decoration} />
+
+        {showEditorDecorations && isSelected && (
+          <SelectionRect decoration={decoration} />
+        )}
+      </Group>
+
+      {showEditorDecorations && isSelected && (
+        <Transformer
+          ref={transformerRef}
+          rotateEnabled
+          resizeEnabled
+          keepRatio={false}
+          flipEnabled={false}
+          enabledAnchors={[
+            "top-left",
+            "top-right",
+            "bottom-left",
+            "bottom-right",
+            "middle-left",
+            "middle-right",
+            "top-center",
+            "bottom-center",
+          ]}
+          borderStroke="#1976d2"
+          anchorStroke="#1976d2"
+          anchorFill="#ffffff"
+          rotateAnchorOffset={28}
+          boundBoxFunc={(oldBox, newBox) => {
+            if (newBox.width < 12 || newBox.height < 12) {
+              return oldBox;
+            }
+
+            return newBox;
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+function normalizeRotation(rotation: number) {
+  const normalized = rotation % 360;
+
+  if (normalized > 180) {
+    return normalized - 360;
+  }
+
+  if (normalized < -180) {
+    return normalized + 360;
+  }
+
+  return normalized;
 }
 
 type ImageDecoration = Extract<Decoration, { type: "image" }>;
