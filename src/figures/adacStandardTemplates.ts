@@ -99,6 +99,21 @@ const SLALOM_TEMPLATES: FigureTemplate[] = SLALOM_CONE_COUNTS.flatMap(
 );
 
 export const STANDARD_COURSE_TEMPLATES: FigureTemplate[] = [
+  {
+    id: "single-cone",
+    name: "Einzelne Pylone",
+    category: "Basic",
+    description: "Eine einzelne Pylone.",
+    elements: [
+      {
+        type: "cone",
+        x: 0,
+        y: 0,
+        radius: 0.25,
+      },
+    ],
+  },
+
   ...SLALOM_TEMPLATES,
 
   {

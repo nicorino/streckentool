@@ -1,47 +1,59 @@
 import type { CSSProperties } from "react";
 import { useAppLanguage } from "../i18n/i18n";
+import {
+  legalContent,
+  type LegalLanguage,
+  type LegalModalType,
+} from "../legal/legalContent";
 
-export type LegalModalType = "impressum" | "privacy" | "cookies";
-export type LegalPage = LegalModalType;
+export type { LegalModalType } from "../legal/legalContent";
 
 type LegalModalProps = {
-  type?: LegalModalType | string | null;
-  legalType?: LegalModalType | string | null;
-  kind?: LegalModalType | string | null;
-  onClose?: () => void;
-  [key: string]: unknown;
+  type: LegalModalType;
+  onClose: () => void;
 };
 
-export function LegalModal({
-  type,
-  legalType,
-  kind,
-  onClose,
-}: LegalModalProps) {
-  const { t } = useAppLanguage();
-
-  const modalType = normalizeLegalType(type ?? legalType ?? kind);
-  const title = getLegalTitle(modalType, t);
-  const body = getLegalBody(modalType, t);
+export function LegalModal({ type, onClose }: LegalModalProps) {
+  const { language } = useAppLanguage();
+  const legalLanguage: LegalLanguage = language === "de" ? "de" : "en";
+  const content = legalContent[legalLanguage][type];
 
   return (
     <div style={backdropStyle}>
       <section style={dialogStyle}>
         <div style={headerStyle}>
-          <h2 style={{ margin: 0 }}>{title}</h2>
+          <div>
+            <h2 style={titleStyle}>{content.title}</h2>
+            <p style={updatedStyle}>
+              {legalLanguage === "de" ? "Stand" : "Last updated"}:{" "}
+              {content.updatedAt}
+            </p>
+          </div>
 
           <button type="button" onClick={onClose} style={closeButtonStyle}>
             ×
           </button>
         </div>
 
-        <p style={noticeStyle}>{t("legalPlaceholderNotice")}</p>
+        <div style={bodyStyle}>
+          {content.sections.map((section, sectionIndex) => (
+            <section key={sectionIndex} style={sectionStyle}>
+              {section.heading && (
+                <h3 style={sectionHeadingStyle}>{section.heading}</h3>
+              )}
 
-        <p style={bodyStyle}>{body}</p>
+              {section.paragraphs.map((paragraph, paragraphIndex) => (
+                <p key={paragraphIndex} style={paragraphStyle}>
+                  {paragraph}
+                </p>
+              ))}
+            </section>
+          ))}
+        </div>
 
-        <div style={buttonRowStyle}>
+        <div style={footerStyle}>
           <button type="button" onClick={onClose}>
-            {t("close")}
+            {legalLanguage === "de" ? "Schließen" : "Close"}
           </button>
         </div>
       </section>
@@ -49,91 +61,86 @@ export function LegalModal({
   );
 }
 
-function normalizeLegalType(value: unknown): LegalModalType {
-  if (value === "privacy") return "privacy";
-  if (value === "cookies") return "cookies";
-  return "impressum";
-}
-
-function getLegalTitle(
-  type: LegalModalType,
-  t: (key: "legalImpressumTitle" | "legalPrivacyTitle" | "legalCookiesTitle") => string
-) {
-  if (type === "privacy") return t("legalPrivacyTitle");
-  if (type === "cookies") return t("legalCookiesTitle");
-  return t("legalImpressumTitle");
-}
-
-function getLegalBody(
-  type: LegalModalType,
-  t: (key: "legalImpressumBody" | "legalPrivacyBody" | "legalCookiesBody") => string
-) {
-  if (type === "privacy") return t("legalPrivacyBody");
-  if (type === "cookies") return t("legalCookiesBody");
-  return t("legalImpressumBody");
-}
-
-const backdropStyle = {
+const backdropStyle: CSSProperties = {
   position: "fixed",
   inset: 0,
-  zIndex: 1350,
-  background: "rgba(0,0,0,0.58)",
+  zIndex: 1500,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   padding: 20,
-} satisfies CSSProperties;
+  background: "rgba(0,0,0,0.58)",
+};
 
-const dialogStyle = {
-  width: "min(620px, 100%)",
-  maxHeight: "min(720px, calc(100vh - 40px))",
-  overflowY: "auto",
+const dialogStyle: CSSProperties = {
+  width: "min(760px, 100%)",
+  maxHeight: "min(780px, 90vh)",
+  display: "flex",
+  flexDirection: "column",
   background: "var(--st-card)",
   color: "var(--st-text)",
   border: "1px solid var(--st-border)",
   borderRadius: 12,
-  padding: 22,
   boxShadow: "0 24px 70px rgba(0,0,0,0.38)",
   fontFamily: "sans-serif",
-} satisfies CSSProperties;
+  overflow: "hidden",
+};
 
-const headerStyle = {
+const headerStyle: CSSProperties = {
   display: "flex",
   justifyContent: "space-between",
-  alignItems: "center",
-  gap: 12,
-  marginBottom: 12,
-} satisfies CSSProperties;
+  gap: 16,
+  padding: "18px 20px",
+  borderBottom: "1px solid var(--st-border)",
+};
 
-const closeButtonStyle = {
-  width: 32,
-  height: 32,
+const titleStyle: CSSProperties = {
+  margin: 0,
+};
+
+const updatedStyle: CSSProperties = {
+  margin: "6px 0 0",
+  color: "var(--st-text-muted)",
+  fontSize: 13,
+};
+
+const closeButtonStyle: CSSProperties = {
+  width: 34,
+  height: 34,
   borderRadius: 999,
   border: "1px solid var(--st-border)",
   background: "var(--st-card-soft)",
   color: "var(--st-text)",
   cursor: "pointer",
-  fontSize: 20,
+  fontSize: 22,
   lineHeight: 1,
-} satisfies CSSProperties;
+};
 
-const noticeStyle = {
-  padding: 10,
-  borderRadius: 6,
-  background: "var(--st-warning-bg)",
-  border: "1px solid var(--st-warning-border)",
-  fontSize: 13,
-  lineHeight: 1.45,
-} satisfies CSSProperties;
+const bodyStyle: CSSProperties = {
+  padding: "0 20px 20px",
+  overflowY: "auto",
+};
 
-const bodyStyle = {
+const sectionStyle: CSSProperties = {
+  marginTop: 20,
+};
+
+const sectionHeadingStyle: CSSProperties = {
+  margin: "0 0 8px",
+  fontSize: 16,
+};
+
+const paragraphStyle: CSSProperties = {
+  margin: "0 0 9px",
   fontSize: 14,
-  lineHeight: 1.6,
-  color: "var(--st-text)",
-} satisfies CSSProperties;
+  lineHeight: 1.5,
+  whiteSpace: "pre-wrap",
+};
 
-const buttonRowStyle = {
+const footerStyle: CSSProperties = {
   display: "flex",
   justifyContent: "flex-end",
-  marginTop: 18,
-} satisfies CSSProperties;
+  padding: "12px 20px",
+  borderTop: "1px solid var(--st-border)",
+  background: "var(--st-card-soft)",
+};
