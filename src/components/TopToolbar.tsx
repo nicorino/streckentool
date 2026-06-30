@@ -1,4 +1,36 @@
 import { useState, type ChangeEvent, type ReactNode } from "react";
+import {
+  ArrowRight,
+  BookOpen,
+  ChevronDown,
+  Crosshair,
+  Download,
+  Eye,
+  FileJson,
+  FilePlus2,
+  FolderOpen,
+  Grid2X2,
+  Heart,
+  HelpCircle,
+  Image as ImageIcon,
+  ImagePlus,
+  Languages,
+  Map,
+  Minus,
+  MousePointer2,
+  Palette,
+  Plus,
+  Redo2,
+  RotateCcw,
+  Ruler,
+  Save,
+  Square,
+  Trash2,
+  Type,
+  Undo2,
+  Upload,
+  type LucideIcon,
+} from "lucide-react";
 import type { ExportFormat } from "../export/getProjectBounds";
 import type { ArrowKind } from "../types/Decoration";
 import {
@@ -7,6 +39,7 @@ import {
   useAppLanguage,
 } from "../i18n/i18n";
 import { type AppTheme, useAppTheme } from "../theme/theme";
+import { ExportDialog, type ExportPngOptions } from "./ExportDialog";
 
 export type EditorTool = "select" | "measure" | "calibrate";
 
@@ -34,7 +67,8 @@ type TopToolbarProps = {
   onNewProject: () => void;
   onSaveProject: () => void;
   onLoadProjectFile: (file: File) => void;
-  onExportPng: () => void;
+  onExportPng: (options: ExportPngOptions) => void;
+  onCreateExportPreview: (format: ExportFormat) => Promise<string | null>;
 
   exportFormat: ExportFormat;
   onChangeExportFormat: (format: ExportFormat) => void;
@@ -55,11 +89,14 @@ type TopToolbarProps = {
   showHelperLines: boolean;
   onToggleShowHelperLines: () => void;
 
+  hasUnsavedChanges: boolean;
+  onStartTutorial: () => void;
   onImportCreatorJson: (event: ChangeEvent<HTMLInputElement>) => void;
 };
 
 export function TopToolbar({
   onImportCreatorJson,
+  onStartTutorial,
   onAddRectangle,
   onAddText,
   onAddArrow,
@@ -77,6 +114,7 @@ export function TopToolbar({
   onSaveProject,
   onLoadProjectFile,
   onExportPng,
+  onCreateExportPreview,
   exportFormat,
   onChangeExportFormat,
   zoomPercent,
@@ -91,10 +129,12 @@ export function TopToolbar({
   onTogglePrintPreview,
   showHelperLines,
   onToggleShowHelperLines,
+  hasUnsavedChanges,
 }: TopToolbarProps) {
   const { language, setLanguage, t } = useAppLanguage();
   const { theme, setTheme } = useAppTheme();
   const [activePreset, setActivePreset] = useState<ToolbarPreset>("plan");
+  const [showExportDialog, setShowExportDialog] = useState(false);
 
   function handleLoadFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -126,7 +166,19 @@ export function TopToolbar({
     event.target.value = "";
   }
 
+  function handleArrowSelect(event: ChangeEvent<HTMLSelectElement>) {
+    const arrowKind = event.target.value as ArrowKind | "";
+
+    if (!arrowKind) {
+      return;
+    }
+
+    onAddArrow(arrowKind);
+    event.target.value = "";
+  }
+
   return (
+    <>
     <header style={toolbarStyle}>
       <div title={t("appName")} style={toolbarLogoAreaStyle}>
         <img
@@ -138,27 +190,9 @@ export function TopToolbar({
 
       <div style={topRowStyle}>
         <div style={leftControlsStyle}>
-          <ToolbarSection>
-            <ToolButton
-              active={activeTool === "select"}
-              onClick={() => onChangeActiveTool("select")}
-            >
-              {t("select")}
-            </ToolButton>
-
-            <ToolButton
-              active={activeTool === "measure"}
-              onClick={() => onChangeActiveTool("measure")}
-            >
-              {t("measure")}
-            </ToolButton>
-
-            <button onClick={onClearMeasurements} disabled={!hasMeasurements}>
-              {t("clearMeasurements")}
-            </button>
-          </ToolbarSection>
-
           <PresetButton
+            icon={Map}
+            tutorialTarget="tutorial-course-tab"
             active={activePreset === "plan"}
             onClick={() => setActivePreset("plan")}
           >
@@ -166,6 +200,7 @@ export function TopToolbar({
           </PresetButton>
 
           <PresetButton
+            icon={ImageIcon}
             active={activePreset === "background"}
             onClick={() => setActivePreset("background")}
           >
@@ -173,6 +208,8 @@ export function TopToolbar({
           </PresetButton>
 
           <PresetButton
+            icon={Download}
+            tutorialTarget="tutorial-export-tab"
             active={activePreset === "export"}
             onClick={() => setActivePreset("export")}
           >
@@ -180,6 +217,7 @@ export function TopToolbar({
           </PresetButton>
 
           <PresetButton
+            icon={FolderOpen}
             active={activePreset === "project"}
             onClick={() => setActivePreset("project")}
           >
@@ -188,44 +226,69 @@ export function TopToolbar({
         </div>
 
         <div style={centerControlsStyle}>
-          <div style={zoomClusterStyle}>
-            <button onClick={onZoomOut}>−</button>
-            <button onClick={onResetZoom}>{zoomPercent}%</button>
-            <button onClick={onZoomIn}>+</button>
-          </div>
+          <ToolbarSection compact>
+            <IconOnlyButton
+              icon={Minus}
+              title="Zoom out"
+              onClick={onZoomOut}
+            />
 
-          <div style={historyClusterStyle}>
-            <button onClick={onUndo} disabled={!canUndo}>
+            <button
+              type="button"
+              onClick={onResetZoom}
+              style={zoomButtonStyle}
+              title="Reset zoom"
+            >
+              {zoomPercent}%
+            </button>
+
+            <IconOnlyButton icon={Plus} title="Zoom in" onClick={onZoomIn} />
+          </ToolbarSection>
+
+          <ToolbarSection compact>
+            <IconToolbarButton
+              icon={Undo2}
+              onClick={onUndo}
+              disabled={!canUndo}
+              title={t("undo")}
+            >
               {t("undo")}
-            </button>
+            </IconToolbarButton>
 
-            <button onClick={onRedo} disabled={!canRedo}>
+            <IconToolbarButton
+              icon={Redo2}
+              onClick={onRedo}
+              disabled={!canRedo}
+              title={t("redo")}
+            >
               {t("redo")}
-            </button>
-          </div>
+            </IconToolbarButton>
+          </ToolbarSection>
         </div>
 
         <div style={{ flex: 1, minWidth: 12 }} />
 
         <div style={rightControlsStyle}>
-          <label style={compactLabelStyle}>
-            {t("theme")}
+          <label style={compactLabelStyle} title={t("theme")}>
+            <Palette size={14} strokeWidth={2} />
             <select
               value={theme}
               onChange={(event) => setTheme(event.target.value as AppTheme)}
+              style={compactSelectStyle}
             >
               <option value="light">{t("lightMode")}</option>
               <option value="dark">{t("darkMode")}</option>
             </select>
           </label>
 
-          <label style={compactLabelStyle}>
-            {t("language")}
+          <label style={compactLabelStyle} title={t("language")}>
+            <Languages size={14} strokeWidth={2} />
             <select
               value={language}
               onChange={(event) =>
                 setLanguage(event.target.value as AppLanguage)
               }
+              style={compactSelectStyle}
             >
               {SUPPORTED_LANGUAGES.map((supportedLanguage) => (
                 <option
@@ -238,8 +301,23 @@ export function TopToolbar({
             </select>
           </label>
 
-          <ToolbarLink href={WIKI_URL}>{t("wiki")}</ToolbarLink>
-          <ToolbarLink href={PAYPAL_URL}>{t("support")}</ToolbarLink>
+          <button
+            type="button"
+            onClick={onStartTutorial}
+            style={toolbarLinkStyle}
+            data-tutorial-target="tutorial-start-button"
+          >
+            <HelpCircle size={14} strokeWidth={2.2} />
+            <span>{t("tutorial")}</span>
+          </button>
+
+          <ToolbarLink href={WIKI_URL} icon={BookOpen}>
+            {t("wiki")}
+          </ToolbarLink>
+
+          <ToolbarLink href={PAYPAL_URL} icon={Heart}>
+            {t("support")}
+          </ToolbarLink>
         </div>
       </div>
 
@@ -247,44 +325,86 @@ export function TopToolbar({
         {activePreset === "plan" && (
           <>
             <ToolbarSection>
-              <button onClick={onAddRectangle}>{t("workspace")}</button>
+              <IconToolbarButton
+                icon={MousePointer2}
+                active={activeTool === "select"}
+                onClick={() => onChangeActiveTool("select")}
+                title={t("select")}
+              >
+                {t("select")}
+              </IconToolbarButton>
 
-              <button onClick={onAddText}>{t("text")}</button>
+              <IconToolbarButton
+                icon={Ruler}
+                active={activeTool === "measure"}
+                onClick={() => onChangeActiveTool("measure")}
+                title={t("measure")}
+              >
+                {t("measure")}
+              </IconToolbarButton>
 
-              <label>
-                <span style={fileButtonStyle}>{t("imageLogo")}</span>
+              <IconToolbarButton
+                icon={Trash2}
+                onClick={onClearMeasurements}
+                disabled={!hasMeasurements}
+                title={t("clearMeasurements")}
+              >
+                {t("clearMeasurements")}
+              </IconToolbarButton>
+            </ToolbarSection>
 
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                  onChange={handleImageFile}
-                  style={{ display: "none" }}
-                />
+            <ToolbarSection>
+              <IconToolbarButton
+                icon={Square}
+                tutorialTarget="tutorial-course-area-button"
+                onClick={onAddRectangle}
+                title={t("workspace")}
+              >
+                {t("workspace")}
+              </IconToolbarButton>
+
+              <IconToolbarButton icon={Type} onClick={onAddText} title={t("text")}>
+                {t("text")}
+              </IconToolbarButton>
+
+              <IconFileButton
+                icon={ImagePlus}
+                label={t("imageLogo")}
+                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                onChange={handleImageFile}
+              />
+            </ToolbarSection>
+
+            <ToolbarSection>
+              <label style={toolbarSelectLabelStyle} title={t("arrowStraight")}>
+                <ArrowRight size={15} strokeWidth={2.2} />
+                <select
+                  defaultValue=""
+                  onChange={handleArrowSelect}
+                  style={toolbarSelectStyle}
+                >
+                  <option value="" disabled>
+                    {t("arrowStraight")}…
+                  </option>
+                  <option value="straight">{t("arrowStraight")}</option>
+                  <option value="straight-long">{t("arrowLong")}</option>
+                  <option value="curve-right">{t("arrowCurveRight")}</option>
+                  <option value="curve-left">{t("arrowCurveLeft")}</option>
+                </select>
+                <ChevronDown size={13} strokeWidth={2.2} />
               </label>
             </ToolbarSection>
 
             <ToolbarSection>
-              <button onClick={() => onAddArrow("straight")}>
-                {t("arrowStraight")}
-              </button>
-
-              <button onClick={() => onAddArrow("straight-long")}>
-                {t("arrowLong")}
-              </button>
-
-              <button onClick={() => onAddArrow("curve-right")}>
-                {t("arrowCurveRight")}
-              </button>
-
-              <button onClick={() => onAddArrow("curve-left")}>
-                {t("arrowCurveLeft")}
-              </button>
-            </ToolbarSection>
-
-            <ToolbarSection>
-              <button onClick={onDeleteSelected} disabled={!hasSelection}>
+              <IconToolbarButton
+                icon={Trash2}
+                onClick={onDeleteSelected}
+                disabled={!hasSelection}
+                danger
+                title={t("deleteSelected")}
+              >
                 {t("deleteSelected")}
-              </button>
+              </IconToolbarButton>
             </ToolbarSection>
           </>
         )}
@@ -292,33 +412,32 @@ export function TopToolbar({
         {activePreset === "background" && (
           <>
             <ToolbarSection>
-              <label>
-                <span style={fileButtonStyle}>{t("background")}</span>
+              <IconFileButton
+                icon={Upload}
+                label={t("background")}
+                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                onChange={handleBackgroundImageFile}
+              />
 
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                  onChange={handleBackgroundImageFile}
-                  style={{ display: "none" }}
-                />
-              </label>
-
-              <button
+              <IconToolbarButton
+                icon={Crosshair}
                 onClick={() => onChangeActiveTool("calibrate")}
                 disabled={!hasBackgroundImage}
-                style={{
-                  fontWeight: activeTool === "calibrate" ? "bold" : "normal",
-                }}
+                active={activeTool === "calibrate"}
+                title={t("calibrate")}
               >
                 {t("calibrate")}
-              </button>
+              </IconToolbarButton>
 
-              <button
+              <IconToolbarButton
+                icon={Trash2}
                 onClick={onClearBackgroundImage}
                 disabled={!hasBackgroundImage}
+                danger
+                title={t("clearBackground")}
               >
                 {t("clearBackground")}
-              </button>
+              </IconToolbarButton>
             </ToolbarSection>
 
             <ToolbarHint>{t("hotkeyHelp")}</ToolbarHint>
@@ -328,85 +447,82 @@ export function TopToolbar({
         {activePreset === "export" && (
           <>
             <ToolbarSection>
-              <label style={{ fontSize: 13 }}>
-                {t("format")}{" "}
-                <select
-                  value={exportFormat}
-                  onChange={(event) =>
-                    onChangeExportFormat(event.target.value as ExportFormat)
-                  }
-                >
-                  <option value="content">{t("formatContent")}</option>
-                  <option value="a4-landscape">{t("formatA4Landscape")}</option>
-                  <option value="a4-portrait">{t("formatA4Portrait")}</option>
-                </select>
-              </label>
-
-              <button onClick={onExportPng}>{t("png")}</button>
+              <IconToolbarButton
+                icon={Download}
+                tutorialTarget="tutorial-export-settings-button"
+                onClick={() => setShowExportDialog(true)}
+                title={t("exportSettings")}
+              >
+                {t("exportSettings")}
+              </IconToolbarButton>
             </ToolbarSection>
 
             <ToolbarSection>
-              <label style={{ fontSize: 13 }}>
-                <input
-                  type="checkbox"
-                  checked={printPreview}
-                  onChange={onTogglePrintPreview}
-                  style={{ marginRight: 6 }}
-                />
+              <IconToggle
+                icon={Eye}
+                checked={printPreview}
+                onChange={onTogglePrintPreview}
+              >
                 {t("printPreview")}
-              </label>
+              </IconToggle>
 
-              <label style={{ fontSize: 13 }}>
-                <input
-                  type="checkbox"
-                  checked={showHelperLines}
-                  onChange={onToggleShowHelperLines}
-                  disabled={printPreview}
-                  style={{ marginRight: 6 }}
-                />
+              <IconToggle
+                icon={Grid2X2}
+                checked={showHelperLines}
+                onChange={onToggleShowHelperLines}
+                disabled={printPreview}
+              >
                 {t("helperLines")}
-              </label>
+              </IconToggle>
             </ToolbarSection>
+
+            <ToolbarHint>{t("exportToolbarHint")}</ToolbarHint>
           </>
         )}
 
         {activePreset === "project" && (
           <>
             <ToolbarSection>
-              <button onClick={onNewProject}>{t("newProjectShort")}</button>
+              <IconToolbarButton
+                icon={FilePlus2}
+                onClick={onNewProject}
+                title={t("newProjectShort")}
+              >
+                {t("newProjectShort")}
+              </IconToolbarButton>
 
-              <button onClick={onSaveProject}>{t("save")}</button>
+              <IconToolbarButton icon={Save} onClick={onSaveProject} title={t("saveProjectFile")}>
+                {t("save")}
+              </IconToolbarButton>
 
-              <label>
-                <span style={fileButtonStyle}>{t("load")}</span>
+              <IconFileButton
+                icon={FolderOpen}
+                label={t("loadProjectFile")}
+                accept="application/json,.json"
+                onChange={handleLoadFile}
+              />
 
-                <input
-                  type="file"
-                  accept="application/json,.json"
-                  onChange={handleLoadFile}
-                  style={{ display: "none" }}
-                />
-              </label>
-
-              <label>
-                <span style={fileButtonStyle}>{t("importCreatorJson")}</span>
-
-                <input
-                  type="file"
-                  accept="application/json,.json"
-                  onChange={onImportCreatorJson}
-                  style={{ display: "none" }}
-                />
-              </label>
+              <IconFileButton
+                icon={FileJson}
+                label={t("importCreatorJson")}
+                accept="application/json,.json"
+                onChange={onImportCreatorJson}
+              />
 
               <a
                 href="/creator"
-                style={{
-                  ...fileButtonStyle,
-                  textDecoration: "none",
+                style={toolbarButtonStyle}
+                onClick={(event) => {
+                  if (
+                    hasUnsavedChanges &&
+                    !window.confirm(t("unsavedLeaveWarning"))
+                  ) {
+                    event.preventDefault();
+                  }
                 }}
               >
-                {t("creator")}
+                <RotateCcw size={15} strokeWidth={2.2} />
+                <span>{t("figureCreator")}</span>
               </a>
             </ToolbarSection>
 
@@ -415,15 +531,34 @@ export function TopToolbar({
         )}
       </div>
     </header>
+
+    {showExportDialog && (
+      <ExportDialog
+        exportFormat={exportFormat}
+        onChangeExportFormat={onChangeExportFormat}
+        printPreview={printPreview}
+        onTogglePrintPreview={onTogglePrintPreview}
+        showHelperLines={showHelperLines}
+        onToggleShowHelperLines={onToggleShowHelperLines}
+        onExport={onExportPng}
+        onCreatePreview={onCreateExportPreview}
+        onClose={() => setShowExportDialog(false)}
+      />
+    )}
+    </>
   );
 }
 
 function PresetButton({
   active,
+  icon: Icon,
+  tutorialTarget,
   onClick,
   children,
 }: {
   active: boolean;
+  icon: LucideIcon;
+  tutorialTarget?: string;
   onClick: () => void;
   children: ReactNode;
 }) {
@@ -431,82 +566,214 @@ function PresetButton({
     <button
       type="button"
       onClick={onClick}
-      style={{
-        padding: "6px 12px",
-        borderRadius: 999,
-        border: active
-          ? "1px solid var(--st-primary)"
-          : "1px solid var(--st-button-border)",
-        background: active ? "var(--st-primary)" : "var(--st-card)",
-        color: active ? "var(--st-primary-text)" : "var(--st-text)",
-        fontWeight: active ? 700 : 500,
-        cursor: "pointer",
-        flexShrink: 0,
-      }}
+      data-tutorial-target={tutorialTarget}
+      style={getPresetButtonStyle(active)}
     >
-      {children}
+      <Icon size={15} strokeWidth={2.2} />
+      <span>{children}</span>
     </button>
   );
 }
 
-function ToolButton({
-  active,
+function IconToolbarButton({
+  active = false,
+  danger = false,
+  disabled = false,
+  icon: Icon,
+  tutorialTarget,
   onClick,
+  title,
   children,
 }: {
-  active: boolean;
+  active?: boolean;
+  danger?: boolean;
+  disabled?: boolean;
+  icon: LucideIcon;
+  tutorialTarget?: string;
   onClick: () => void;
+  title?: string;
   children: ReactNode;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      style={{
-        fontWeight: active ? 700 : 500,
-        borderColor: active ? "var(--st-primary)" : "var(--st-button-border)",
-      }}
+      disabled={disabled}
+      title={title}
+      data-tutorial-target={tutorialTarget}
+      style={getToolbarButtonStyle({ active, danger, disabled })}
     >
-      {children}
+      <Icon size={15} strokeWidth={2.2} />
+      <span>{children}</span>
     </button>
   );
 }
 
-function ToolbarSection({ children }: { children: ReactNode }) {
+function IconOnlyButton({
+  disabled = false,
+  icon: Icon,
+  onClick,
+  title,
+}: {
+  disabled?: boolean;
+  icon: LucideIcon;
+  onClick: () => void;
+  title: string;
+}) {
   return (
-    <section style={toolbarSectionStyle}>
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      style={iconOnlyButtonStyle}
+    >
+      <Icon size={14} strokeWidth={2.4} />
+    </button>
+  );
+}
+
+function IconFileButton({
+  icon: Icon,
+  label,
+  accept,
+  onChange,
+}: {
+  icon: LucideIcon;
+  label: string;
+  accept: string;
+  onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+}) {
+  return (
+    <label style={toolbarButtonStyle} title={label}>
+      <Icon size={15} strokeWidth={2.2} />
+      <span>{label}</span>
+
+      <input
+        type="file"
+        accept={accept}
+        onChange={onChange}
+        style={{ display: "none" }}
+      />
+    </label>
+  );
+}
+
+function IconToggle({
+  checked,
+  disabled = false,
+  icon: Icon,
+  onChange,
+  children,
+}: {
+  checked: boolean;
+  disabled?: boolean;
+  icon: LucideIcon;
+  onChange: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <label
+      style={getToolbarButtonStyle({
+        active: checked,
+        disabled,
+      })}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={onChange}
+        disabled={disabled}
+        style={{ display: "none" }}
+      />
+      <Icon size={15} strokeWidth={2.2} />
+      <span>{children}</span>
+    </label>
+  );
+}
+
+function ToolbarSection({
+  compact = false,
+  children,
+}: {
+  compact?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <section style={compact ? compactToolbarSectionStyle : toolbarSectionStyle}>
       {children}
     </section>
   );
 }
 
 function ToolbarHint({ children }: { children: ReactNode }) {
-  return (
-    <span
-      style={{
-        fontSize: 12,
-        color: "var(--st-text-muted)",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-      }}
-    >
-      {children}
-    </span>
-  );
+  return <span style={toolbarHintStyle}>{children}</span>;
 }
 
 function ToolbarLink({
   href,
+  icon: Icon,
   children,
 }: {
   href: string;
+  icon: LucideIcon;
   children: ReactNode;
 }) {
   return (
     <a href={href} target="_blank" rel="noreferrer" style={toolbarLinkStyle}>
-      {children}
+      <Icon size={14} strokeWidth={2.2} />
+      <span>{children}</span>
     </a>
   );
+}
+
+function getPresetButtonStyle(active: boolean) {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    height: 29,
+    padding: "0 12px",
+    borderRadius: 999,
+    border: active
+      ? "1px solid var(--st-primary)"
+      : "1px solid var(--st-border-soft)",
+    background: active ? "var(--st-primary)" : "var(--st-card)",
+    color: active ? "var(--st-primary-text)" : "var(--st-text)",
+    fontWeight: active ? 700 : 600,
+    fontSize: 13,
+    cursor: "pointer",
+    flexShrink: 0,
+    boxShadow: active ? "0 2px 8px rgba(25,118,210,0.24)" : "none",
+  };
+}
+
+function getToolbarButtonStyle({
+  active = false,
+  danger = false,
+  disabled = false,
+}: {
+  active?: boolean;
+  danger?: boolean;
+  disabled?: boolean;
+} = {}) {
+  return {
+    ...toolbarButtonStyle,
+    opacity: disabled ? 0.55 : 1,
+    cursor: disabled ? "not-allowed" : "pointer",
+    borderColor: active
+      ? "var(--st-primary)"
+      : danger
+        ? "var(--st-danger)"
+        : "var(--st-border-soft)",
+    background: active
+      ? "rgba(25, 118, 210, 0.12)"
+      : danger
+        ? "rgba(198, 40, 40, 0.07)"
+        : "var(--st-card)",
+    color: danger ? "var(--st-danger)" : "var(--st-text)",
+    fontWeight: active ? 700 : 600,
+  };
 }
 
 const toolbarStyle = {
@@ -590,64 +857,145 @@ const centerControlsStyle = {
   transform: "translate(-50%, -50%)",
   display: "flex",
   alignItems: "center",
-  gap: 18,
-};
-
-const zoomClusterStyle = {
-  display: "flex",
-  alignItems: "center",
-  gap: 4,
-};
-
-const historyClusterStyle = {
-  display: "flex",
-  alignItems: "center",
-  gap: 6,
-  paddingLeft: 16,
-  borderLeft: "1px solid var(--st-border-soft)",
+  gap: 12,
 };
 
 const rightControlsStyle = {
   display: "flex",
   alignItems: "center",
-  gap: 10,
+  gap: 8,
   flexShrink: 0,
 };
 
 const compactLabelStyle = {
-  display: "flex",
+  display: "inline-flex",
   alignItems: "center",
-  gap: 4,
+  gap: 5,
+  height: 28,
+  padding: "0 8px",
+  borderRadius: 7,
+  border: "1px solid var(--st-border-soft)",
+  background: "var(--st-card)",
   fontSize: 12,
   flexShrink: 0,
+};
+
+const compactSelectStyle = {
+  height: 22,
+  border: "none",
+  background: "transparent",
+  fontSize: 12,
 };
 
 const toolbarSectionStyle = {
   display: "flex",
   alignItems: "center",
-  gap: 8,
+  gap: 7,
   paddingRight: 10,
   marginRight: 2,
   borderRight: "1px solid var(--st-border-soft)",
   flexShrink: 0,
 };
 
-const fileButtonStyle = {
-  display: "inline-block",
-  padding: "3px 8px",
-  border: "1px solid var(--st-button-border)",
-  borderRadius: 2,
-  background: "var(--st-button-bg)",
-  color: "var(--st-button-text)",
+const compactToolbarSectionStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: 4,
+  paddingRight: 10,
+  marginRight: 2,
+  borderRight: "1px solid var(--st-border-soft)",
+  flexShrink: 0,
+};
+
+const toolbarButtonStyle = {
+  height: 30,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 6,
+  boxSizing: "border-box" as const,
+  padding: "0 10px",
+  border: "1px solid var(--st-border-soft)",
+  borderRadius: 7,
+  background: "var(--st-card)",
+  color: "var(--st-text)",
+  textDecoration: "none",
   cursor: "pointer",
   fontSize: 13,
+  fontWeight: 600,
+  lineHeight: 1,
+  flexShrink: 0,
+};
+
+const iconOnlyButtonStyle = {
+  width: 28,
+  height: 28,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  border: "1px solid var(--st-border-soft)",
+  borderRadius: 7,
+  background: "var(--st-card)",
+  color: "var(--st-text)",
+  cursor: "pointer",
+  flexShrink: 0,
+};
+
+const zoomButtonStyle = {
+  height: 28,
+  minWidth: 58,
+  padding: "0 8px",
+  border: "1px solid var(--st-border-soft)",
+  borderRadius: 7,
+  background: "var(--st-card)",
+  color: "var(--st-text)",
+  fontSize: 12,
+  fontWeight: 700,
+};
+
+const toolbarSelectLabelStyle = {
+  height: 30,
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 5,
+  boxSizing: "border-box" as const,
+  padding: "0 8px",
+  border: "1px solid var(--st-border-soft)",
+  borderRadius: 7,
+  background: "var(--st-card)",
+  color: "var(--st-text)",
+  fontSize: 13,
+  fontWeight: 600,
+  flexShrink: 0,
+};
+
+const toolbarSelectStyle = {
+  height: 24,
+  minWidth: 92,
+  border: "none",
+  background: "transparent",
+  color: "var(--st-text)",
+  fontSize: 13,
+  fontWeight: 600,
+  outline: "none",
+  cursor: "pointer",
+};
+
+const toolbarHintStyle = {
+  fontSize: 12,
+  color: "var(--st-text-muted)",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
 };
 
 const toolbarLinkStyle = {
-  display: "inline-block",
-  padding: "5px 10px",
+  height: 28,
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 5,
+  padding: "0 10px",
   border: "1px solid var(--st-primary)",
-  borderRadius: 6,
+  borderRadius: 7,
   background: "var(--st-primary)",
   color: "var(--st-primary-text)",
   textDecoration: "none",

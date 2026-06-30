@@ -36,12 +36,24 @@ import { TitleBlockLayer } from "./TitleBlockLayer";
 
 export type EditorCanvasHandle = {
   exportPng: (options: ExportPngOptions) => Promise<void>;
+  exportImageDataUrl: (
+    options: ExportImageOptions
+  ) => Promise<ExportedImage | null>;
 };
 
-type ExportPngOptions = {
-  fileName: string;
+type ExportImageOptions = {
   boundsMeters: ProjectBoundsMeters;
   pixelRatio?: number;
+};
+
+type ExportPngOptions = ExportImageOptions & {
+  fileName: string;
+};
+
+type ExportedImage = {
+  dataUrl: string;
+  width: number;
+  height: number;
 };
 
 type ViewPosition = {
@@ -173,48 +185,71 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, EditorCanvasProps>(
     }, []);
 
     useImperativeHandle(ref, () => ({
+      async exportImageDataUrl(options) {
+        return createExportImageDataUrl(options);
+      },
+
       async exportPng({ fileName, boundsMeters, pixelRatio = 3 }) {
-        const stage = stageRef.current;
-        if (!stage) return;
+        const exportedImage = await createExportImageDataUrl({
+          boundsMeters,
+          pixelRatio,
+        });
 
-        const width = Math.max(
-          1,
-          Math.ceil(metersToPixels(boundsMeters.right - boundsMeters.left))
-        );
-
-        const height = Math.max(
-          1,
-          Math.ceil(metersToPixels(boundsMeters.bottom - boundsMeters.top))
-        );
-
-        setActiveExportBounds(boundsMeters);
-        setIsExporting(true);
-
-        await waitForNextFrame();
-        await waitForNextFrame();
-
-        try {
-          const dataUrl = stage.toDataURL({
-            x: 0,
-            y: 0,
-            width,
-            height,
-            pixelRatio,
-            mimeType: "image/png",
-          });
-
-          const link = document.createElement("a");
-          link.href = dataUrl;
-          link.download = fileName;
-          document.body.appendChild(link);
-          link.click();
-          link.remove();
-        } finally {
-          setIsExporting(false);
-          setActiveExportBounds(null);
+        if (!exportedImage) {
+          return;
         }
+
+        const link = document.createElement("a");
+        link.href = exportedImage.dataUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
       },
     }));
+
+    async function createExportImageDataUrl({
+      boundsMeters,
+      pixelRatio = 3,
+    }: ExportImageOptions): Promise<ExportedImage | null> {
+      const stage = stageRef.current;
+      if (!stage) return null;
+
+      const width = Math.max(
+        1,
+        Math.ceil(metersToPixels(boundsMeters.right - boundsMeters.left))
+      );
+      const height = Math.max(
+        1,
+        Math.ceil(metersToPixels(boundsMeters.bottom - boundsMeters.top))
+      );
+
+      setActiveExportBounds(boundsMeters);
+      setIsExporting(true);
+
+      await waitForNextFrame();
+      await waitForNextFrame();
+
+      try {
+        const dataUrl = stage.toDataURL({
+          x: 0,
+          y: 0,
+          width,
+          height,
+          pixelRatio,
+          mimeType: "image/png",
+        });
+
+        return {
+          dataUrl,
+          width,
+          height,
+        };
+      } finally {
+        setIsExporting(false);
+        setActiveExportBounds(null);
+      }
+    }
 
     function updateRect(updatedRect: CourseRect) {
       onChangeRects(

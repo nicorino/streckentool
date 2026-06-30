@@ -1,33 +1,44 @@
-import type { ReactElement } from "react";
 import { Layer, Line } from "react-konva";
-import {
-  GRID_SIZE_METERS,
-  WORLD_SIZE_METERS,
-  metersToPixels,
-} from "../utils/snap";
+import { metersToPixels, WORLD_SIZE_METERS } from "../utils/snap";
+
+const MIN_WORLD_METERS = -WORLD_SIZE_METERS;
+const MAX_WORLD_METERS = WORLD_SIZE_METERS;
 
 export function GridLayer() {
-  const lines: ReactElement[] = [];
+  const lines = [];
 
-  for (let meter = 0; meter <= WORLD_SIZE_METERS; meter += GRID_SIZE_METERS) {
-    const position = metersToPixels(meter);
+  for (let meter = MIN_WORLD_METERS; meter <= MAX_WORLD_METERS; meter += 1) {
+    const pixel = metersToPixels(meter);
     const isMajorLine = meter % 5 === 0;
+    const isOrigin = meter === 0;
 
     lines.push(
       <Line
-        key={`v-${meter}`}
-        points={[position, 0, position, metersToPixels(WORLD_SIZE_METERS)]}
-        stroke={isMajorLine ? "#cfcfcf" : "#e8e8e8"}
-        strokeWidth={isMajorLine ? 1.5 : 1}
+        key={`vertical-${meter}`}
+        points={[
+          pixel,
+          metersToPixels(MIN_WORLD_METERS),
+          pixel,
+          metersToPixels(MAX_WORLD_METERS),
+        ]}
+        stroke={isOrigin ? "#9e9e9e" : isMajorLine ? "#d6d6d6" : "#eeeeee"}
+        strokeWidth={isOrigin ? 2 : isMajorLine ? 1.2 : 1}
+        listening={false}
       />
     );
 
     lines.push(
       <Line
-        key={`h-${meter}`}
-        points={[0, position, metersToPixels(WORLD_SIZE_METERS), position]}
-        stroke={isMajorLine ? "#cfcfcf" : "#e8e8e8"}
-        strokeWidth={isMajorLine ? 1.5 : 1}
+        key={`horizontal-${meter}`}
+        points={[
+          metersToPixels(MIN_WORLD_METERS),
+          pixel,
+          metersToPixels(MAX_WORLD_METERS),
+          pixel,
+        ]}
+        stroke={isOrigin ? "#9e9e9e" : isMajorLine ? "#d6d6d6" : "#eeeeee"}
+        strokeWidth={isOrigin ? 2 : isMajorLine ? 1.2 : 1}
+        listening={false}
       />
     );
   }

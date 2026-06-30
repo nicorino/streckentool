@@ -23,9 +23,17 @@ export type FigureElement =
       y2: number;
     };
 
+export type FigureConfig = {
+  scaleX?: number;
+  scaleY?: number;
+  coneCount?: number;
+  coneDistanceMeters?: number;
+};
+
 export type FigureTemplate = {
   id: string;
   name: string;
+  shortName?: string;
   category?: FigureCategory;
   description?: string;
   elements: FigureElement[];
@@ -39,4 +47,5 @@ export type FigureInstance = {
   rotation: number;
   mirrored: boolean;
   coneColor: string;
+  config?: FigureConfig;
 };

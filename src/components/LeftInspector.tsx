@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import type { CourseRect } from "../types/CourseRect";
 import type { CourseValidation } from "../course/validateConnectedCourse";
 import type { FigureInstance, FigureTemplate } from "../types/Figure";
@@ -6,6 +6,10 @@ import type { Decoration } from "../types/Decoration";
 import type { FigureBoundsWarning } from "../course/checkFigureBounds";
 import type { CourseBackgroundImage } from "../types/CourseBackgroundImage";
 import { type TranslationKey, useAppLanguage } from "../i18n/i18n";
+import {
+  isConfigurableSlalomTemplate,
+  normalizeFigureConfig,
+} from "../figures/figureConfig";
 
 type LeftInspectorProps = {
   selectedRect: CourseRect | null;
@@ -42,44 +46,44 @@ export function LeftInspector({
 }: LeftInspectorProps) {
   const { t } = useAppLanguage();
 
+  const selectedTitle = getSelectedTitle({
+    selectedRect,
+    selectedFigure,
+    selectedFigureTemplate,
+    selectedDecoration,
+    t,
+  });
+
+  const selectedFigureConfig =
+    selectedFigure && selectedFigureTemplate
+      ? normalizeFigureConfig(selectedFigureTemplate, selectedFigure.config)
+      : null;
+
+  const selectedFigureIsConfigurableSlalom =
+    selectedFigureTemplate !== null &&
+    isConfigurableSlalomTemplate(selectedFigureTemplate);
+
   return (
     <aside style={inspectorStyle}>
-      <h3 style={{ marginTop: 0 }}>{t("inspector")}</h3>
+      <header style={inspectorHeaderStyle}>
+        <p style={eyebrowStyle}>{t("selectedObject")}</p>
+        <h2 style={inspectorTitleStyle}>{selectedTitle ?? t("inspector")}</h2>
+      </header>
 
-      <section
-        style={{
-          ...statusCardStyle,
-          background: courseValidation.isValid
-            ? "var(--st-success-bg)"
-            : "var(--st-error-bg)",
-          border: courseValidation.isValid
-            ? "1px solid var(--st-success-border)"
-            : "1px solid var(--st-error-border)",
-        }}
+      <StatusCard
+        tone={courseValidation.isValid ? "success" : "error"}
+        title={courseValidation.isValid ? t("validCourse") : t("invalidCourse")}
       >
-        <strong>
-          {courseValidation.isValid ? t("validCourse") : t("invalidCourse")}
-        </strong>
-
         {courseValidation.messages.map((message) => (
-          <p key={message} style={{ margin: "6px 0 0" }}>
+          <p key={message} style={statusTextStyle}>
             {translateCourseMessage(message, t)}
           </p>
         ))}
-      </section>
+      </StatusCard>
 
       {figureWarningCount > 0 && (
-        <section
-          style={{
-            ...statusCardStyle,
-            marginTop: 12,
-            background: "var(--st-warning-bg)",
-            border: "1px solid var(--st-warning-border)",
-          }}
-        >
-          <strong>{t("figureWarning")}</strong>
-
-          <p style={{ margin: "6px 0 0" }}>
+        <StatusCard tone="warning" title={t("figureWarning")}>
+          <p style={statusTextStyle}>
             {figureWarningCount}{" "}
             {figureWarningCount === 1
               ? t("figureSingular")
@@ -88,185 +92,196 @@ export function LeftInspector({
               ? t("isPartlyOutsideCourse")
               : t("arePartlyOutsideCourse")}
           </p>
-        </section>
+        </StatusCard>
       )}
 
       {backgroundImage && (
-        <section
-          style={{
-            ...statusCardStyle,
-            marginTop: 12,
-            background: "var(--st-info-bg)",
-            border: "1px solid var(--st-info-border)",
-          }}
+        <DetailsSection
+          title={t("backgroundImage")}
+          subtitle={backgroundImage.name}
+          defaultOpen={false}
         >
-          <strong>{t("backgroundImage")}</strong>
-
-          <p style={{ margin: "6px 0 12px", color: "var(--st-text-muted)" }}>
-            {backgroundImage.name}
-          </p>
-
-          <CheckboxInput
-            label={t("locked")}
-            checked={backgroundImage.locked}
-            onChange={(checked) => onUpdateBackgroundImage({ locked: checked })}
+          <MetricGrid
+            items={[
+              { label: t("position"), value: formatPosition(backgroundImage.x, backgroundImage.y) },
+              { label: t("size"), value: formatSize(backgroundImage.width, backgroundImage.height) },
+              { label: t("rotationDeg"), value: formatDegrees(backgroundImage.rotation) },
+              { label: t("opacity"), value: `${Math.round(backgroundImage.opacity * 100)}%` },
+            ]}
           />
 
-          <NumberInput
-            label={t("opacity")}
-            value={backgroundImage.opacity}
-            min={0}
-            max={1}
-            step={0.05}
-            onChange={(value) =>
-              onUpdateBackgroundImage({
-                opacity: Math.max(0, Math.min(1, value)),
-              })
-            }
-          />
+          <DetailsSection title={t("backgroundSettings")} nested defaultOpen>
+            <CheckboxInput
+              label={t("locked")}
+              checked={backgroundImage.locked}
+              onChange={(checked) => onUpdateBackgroundImage({ locked: checked })}
+            />
+
+            <NumberInput
+              label={t("opacity")}
+              value={backgroundImage.opacity}
+              min={0}
+              max={1}
+              step={0.05}
+              onChange={(value) =>
+                onUpdateBackgroundImage({
+                  opacity: Math.max(0, Math.min(1, value)),
+                })
+              }
+            />
+          </DetailsSection>
 
           {!backgroundImage.locked && (
-            <>
+            <DetailsSection title={t("advanced")} nested>
               <NumberInput
                 label={t("xPositionM")}
                 value={backgroundImage.x}
+                step={0.5}
                 onChange={(value) => onUpdateBackgroundImage({ x: value })}
               />
 
               <NumberInput
                 label={t("yPositionM")}
                 value={backgroundImage.y}
+                step={0.5}
                 onChange={(value) => onUpdateBackgroundImage({ y: value })}
-              />
-
-              <NumberInput
-                label={t("rotationDeg")}
-                value={backgroundImage.rotation}
-                min={-360}
-                step={1}
-                onChange={(value) =>
-                  onUpdateBackgroundImage({ rotation: value })
-                }
               />
 
               <NumberInput
                 label={t("widthM")}
                 value={backgroundImage.width}
                 min={0.5}
-                onChange={(value) =>
-                  onUpdateBackgroundImage({ width: value })
-                }
+                step={0.5}
+                onChange={(value) => onUpdateBackgroundImage({ width: value })}
               />
 
               <NumberInput
                 label={t("heightM")}
                 value={backgroundImage.height}
                 min={0.5}
-                onChange={(value) =>
-                  onUpdateBackgroundImage({ height: value })
-                }
+                step={0.5}
+                onChange={(value) => onUpdateBackgroundImage({ height: value })}
               />
-            </>
+
+              <NumberInput
+                label={t("rotationDeg")}
+                value={backgroundImage.rotation}
+                min={-360}
+                max={360}
+                step={1}
+                onChange={(value) => onUpdateBackgroundImage({ rotation: value })}
+              />
+            </DetailsSection>
           )}
-        </section>
+        </DetailsSection>
       )}
 
       {!selectedRect && !selectedFigure && !selectedDecoration && (
-        <p style={{ marginTop: 24, fontSize: 14, color: "var(--st-text-muted)" }}>
-          {t("selectObjectHint")}
-        </p>
-      )}
-
-      {selectedRect && (
-        <section style={sectionStyle}>
-          <h3>{t("workspace")}</h3>
-
-          <CheckboxInput
-            label={t("locked")}
-            checked={selectedRect.locked === true}
-            onChange={(checked) => onUpdateSelectedRect({ locked: checked })}
-          />
-
-          <NumberInput
-            label={t("xPositionM")}
-            value={selectedRect.x}
-            onChange={(value) => onUpdateSelectedRect({ x: value })}
-          />
-
-          <NumberInput
-            label={t("yPositionM")}
-            value={selectedRect.y}
-            onChange={(value) => onUpdateSelectedRect({ y: value })}
-          />
-
-          <NumberInput
-            label={t("widthM")}
-            value={selectedRect.width}
-            min={1}
-            onChange={(value) => onUpdateSelectedRect({ width: value })}
-          />
-
-          <NumberInput
-            label={t("heightM")}
-            value={selectedRect.height}
-            min={1}
-            onChange={(value) => onUpdateSelectedRect({ height: value })}
-          />
-
-          <NumberInput
-            label={t("rotationDeg")}
-            value={selectedRect.rotation}
-            min={-360}
-            step={1}
-            onChange={(value) => onUpdateSelectedRect({ rotation: value })}
-          />
-
-          {!selectedRect.locked && (
-            <div style={{ display: "grid", gap: 8 }}>
-              <button
-                onClick={() =>
-                  onUpdateSelectedRect({
-                    rotation: selectedRect.rotation - 15,
-                  })
-                }
-              >
-                {t("rotateMinus15")}
-              </button>
-
-              <button
-                onClick={() =>
-                  onUpdateSelectedRect({
-                    rotation: selectedRect.rotation + 15,
-                  })
-                }
-              >
-                {t("rotatePlus15")}
-              </button>
-            </div>
-          )}
+        <section style={emptyStateStyle}>
+          <strong>{t("statusReady")}</strong>
+          <p>{t("selectObjectHint")}</p>
         </section>
       )}
 
+      {selectedRect && (
+        <ObjectPanel title={t("workspace")}>
+          <MetricGrid
+            items={[
+              { label: t("position"), value: formatPosition(selectedRect.x, selectedRect.y) },
+              { label: t("size"), value: formatSize(selectedRect.width, selectedRect.height) },
+              { label: t("rotationDeg"), value: formatDegrees(selectedRect.rotation) },
+            ]}
+          />
+
+          <DetailsSection title={t("layout")} nested defaultOpen>
+            <CheckboxInput
+              label={t("locked")}
+              checked={selectedRect.locked === true}
+              onChange={(checked) => onUpdateSelectedRect({ locked: checked })}
+            />
+
+            <NumberInput
+              label={t("xPositionM")}
+              value={selectedRect.x}
+              step={0.5}
+              disabled={selectedRect.locked}
+              onChange={(value) => onUpdateSelectedRect({ x: value })}
+            />
+
+            <NumberInput
+              label={t("yPositionM")}
+              value={selectedRect.y}
+              step={0.5}
+              disabled={selectedRect.locked}
+              onChange={(value) => onUpdateSelectedRect({ y: value })}
+            />
+
+            <NumberInput
+              label={t("widthM")}
+              value={selectedRect.width}
+              min={1}
+              step={0.5}
+              disabled={selectedRect.locked}
+              onChange={(value) => onUpdateSelectedRect({ width: value })}
+            />
+
+            <NumberInput
+              label={t("heightM")}
+              value={selectedRect.height}
+              min={1}
+              step={0.5}
+              disabled={selectedRect.locked}
+              onChange={(value) => onUpdateSelectedRect({ height: value })}
+            />
+
+            <NumberInput
+              label={t("rotationDeg")}
+              value={selectedRect.rotation}
+              min={-360}
+              max={360}
+              step={1}
+              disabled={selectedRect.locked}
+              onChange={(value) => onUpdateSelectedRect({ rotation: value })}
+            />
+          </DetailsSection>
+
+          {!selectedRect.locked && (
+            <DetailsSection title={t("actions")} nested>
+              <ButtonGrid>
+                <button
+                  type="button"
+                  style={secondaryButtonStyle}
+                  onClick={() =>
+                    onUpdateSelectedRect({
+                      rotation: selectedRect.rotation - 15,
+                    })
+                  }
+                >
+                  {t("rotateMinus15")}
+                </button>
+
+                <button
+                  type="button"
+                  style={secondaryButtonStyle}
+                  onClick={() =>
+                    onUpdateSelectedRect({
+                      rotation: selectedRect.rotation + 15,
+                    })
+                  }
+                >
+                  {t("rotatePlus15")}
+                </button>
+              </ButtonGrid>
+            </DetailsSection>
+          )}
+        </ObjectPanel>
+      )}
+
       {selectedFigure && selectedFigureTemplate && (
-        <section style={sectionStyle}>
-          <h3>{t("figure")}</h3>
-
-          <p style={{ fontSize: 14 }}>
-            <strong>{selectedFigureTemplate.name}</strong>
-          </p>
-
+        <ObjectPanel title={t("figure")} subtitle={selectedFigureTemplate.name}>
           {selectedFigureWarning && (
-            <section
-              style={{
-                ...statusCardStyle,
-                marginBottom: 12,
-                background: "var(--st-error-bg)",
-                border: "1px solid var(--st-error-border)",
-              }}
-            >
-              <strong>{t("outsideCourse")}</strong>
-
-              <p style={{ margin: "6px 0 0" }}>
+            <StatusCard tone="error" title={t("outsideCourse")}>
+              <p style={statusTextStyle}>
                 {selectedFigureWarning.outsideConeCount}{" "}
                 {selectedFigureWarning.outsideConeCount === 1
                   ? t("coneSingular")
@@ -275,111 +290,195 @@ export function LeftInspector({
                   ? t("isOutsideCourse")
                   : t("areOutsideCourse")}
               </p>
-            </section>
+            </StatusCard>
           )}
 
-          <NumberInput
-            label={t("xPositionM")}
-            value={selectedFigure.x}
-            onChange={(value) => onUpdateSelectedFigure({ x: value })}
+          <MetricGrid
+            items={[
+              { label: t("position"), value: formatPosition(selectedFigure.x, selectedFigure.y) },
+              { label: t("rotationDeg"), value: formatDegrees(selectedFigure.rotation) },
+              { label: t("coneColor"), value: selectedFigure.coneColor.toUpperCase() },
+            ]}
           />
 
-          <NumberInput
-            label={t("yPositionM")}
-            value={selectedFigure.y}
-            onChange={(value) => onUpdateSelectedFigure({ y: value })}
-          />
+          {selectedFigureConfig && (
+            <DetailsSection title={t("figureSettings")} nested defaultOpen>
 
-          <NumberInput
-            label={t("rotationDeg")}
-            value={selectedFigure.rotation}
-            min={-360}
-            onChange={(value) => onUpdateSelectedFigure({ rotation: value })}
-          />
 
-          <ColorInput
-            label={t("coneColor")}
-            value={selectedFigure.coneColor}
-            onChange={(value) => onUpdateSelectedFigure({ coneColor: value })}
-          />
+              {selectedFigureIsConfigurableSlalom && (
+                <>
+                  <NumberInput
+                    label={t("slalomConeCount")}
+                    value={selectedFigureConfig.coneCount ?? 5}
+                    min={2}
+                    max={10}
+                    step={1}
+                    onChange={(value) =>
+                      onUpdateSelectedFigure({
+                        config: {
+                          ...selectedFigureConfig,
+                          coneCount: Math.round(value),
+                        },
+                      })
+                    }
+                  />
 
-          <div style={{ display: "grid", gap: 8 }}>
-            <button
-              onClick={() =>
-                onUpdateSelectedFigure({
-                  rotation: selectedFigure.rotation - 15,
-                })
-              }
-            >
-              {t("rotateMinus15")}
-            </button>
+                  <NumberInput
+                    label={t("slalomConeDistance")}
+                    value={selectedFigureConfig.coneDistanceMeters ?? 4}
+                    min={0.5}
+                    max={10}
+                    step={0.5}
+                    onChange={(value) =>
+                      onUpdateSelectedFigure({
+                        config: {
+                          ...selectedFigureConfig,
+                          coneDistanceMeters: value,
+                        },
+                      })
+                    }
+                  />
+                </>
+              )}
+            </DetailsSection>
+          )}
 
-            <button
-              onClick={() =>
-                onUpdateSelectedFigure({
-                  rotation: selectedFigure.rotation + 15,
-                })
-              }
-            >
-              {t("rotatePlus15")}
-            </button>
+          <DetailsSection title={t("layout")} nested defaultOpen>
+            <NumberInput
+              label={t("xPositionM")}
+              value={selectedFigure.x}
+              step={0.5}
+              onChange={(value) => onUpdateSelectedFigure({ x: value })}
+            />
 
-            <button onClick={onMirrorSelectedFigure}>
-              {t("mirrorFigure")}
-            </button>
+            <NumberInput
+              label={t("yPositionM")}
+              value={selectedFigure.y}
+              step={0.5}
+              onChange={(value) => onUpdateSelectedFigure({ y: value })}
+            />
 
-            <button onClick={onDuplicateSelectedFigure}>
-              {t("duplicateFigure")}
-            </button>
-          </div>
-        </section>
+            <NumberInput
+              label={t("rotationDeg")}
+              value={selectedFigure.rotation}
+              min={-360}
+              max={360}
+              step={1}
+              onChange={(value) => onUpdateSelectedFigure({ rotation: value })}
+            />
+          </DetailsSection>
+
+          <DetailsSection title={t("appearance")} nested>
+            <ColorInput
+              label={t("coneColor")}
+              value={selectedFigure.coneColor}
+              onChange={(value) => onUpdateSelectedFigure({ coneColor: value })}
+            />
+          </DetailsSection>
+
+          <DetailsSection title={t("actions")} nested defaultOpen>
+            <ButtonGrid>
+              <button
+                type="button"
+                style={secondaryButtonStyle}
+                onClick={() =>
+                  onUpdateSelectedFigure({
+                    rotation: selectedFigure.rotation - 15,
+                  })
+                }
+              >
+                {t("rotateMinus15")}
+              </button>
+
+              <button
+                type="button"
+                style={secondaryButtonStyle}
+                onClick={() =>
+                  onUpdateSelectedFigure({
+                    rotation: selectedFigure.rotation + 15,
+                  })
+                }
+              >
+                {t("rotatePlus15")}
+              </button>
+
+              <button
+                type="button"
+                style={secondaryButtonStyle}
+                onClick={onMirrorSelectedFigure}
+              >
+                {t("mirrorFigure")}
+              </button>
+
+              <button
+                type="button"
+                style={secondaryButtonStyle}
+                onClick={onDuplicateSelectedFigure}
+              >
+                {t("duplicateFigure")}
+              </button>
+            </ButtonGrid>
+          </DetailsSection>
+        </ObjectPanel>
       )}
 
       {selectedDecoration && (
-        <section style={sectionStyle}>
-          <h3>
-            {selectedDecoration.type === "text" ? t("text") : t("imageLogo")}
-          </h3>
-
-          <NumberInput
-            label={t("xPositionM")}
-            value={selectedDecoration.x}
-            onChange={(value) => onUpdateSelectedDecoration({ x: value })}
+        <ObjectPanel title={getDecorationTitle(selectedDecoration, t)}>
+          <MetricGrid
+            items={[
+              { label: t("position"), value: formatPosition(selectedDecoration.x, selectedDecoration.y) },
+              { label: t("size"), value: formatSize(selectedDecoration.width, selectedDecoration.height) },
+              { label: t("rotationDeg"), value: formatDegrees(selectedDecoration.rotation) },
+            ]}
           />
 
-          <NumberInput
-            label={t("yPositionM")}
-            value={selectedDecoration.y}
-            onChange={(value) => onUpdateSelectedDecoration({ y: value })}
-          />
+          <DetailsSection title={t("layout")} nested defaultOpen>
+            <NumberInput
+              label={t("xPositionM")}
+              value={selectedDecoration.x}
+              step={0.5}
+              onChange={(value) => onUpdateSelectedDecoration({ x: value })}
+            />
 
-          <NumberInput
-            label={t("widthM")}
-            value={selectedDecoration.width}
-            min={0.2}
-            onChange={(value) => onUpdateSelectedDecoration({ width: value })}
-          />
+            <NumberInput
+              label={t("yPositionM")}
+              value={selectedDecoration.y}
+              step={0.5}
+              onChange={(value) => onUpdateSelectedDecoration({ y: value })}
+            />
 
-          <NumberInput
-            label={t("heightM")}
-            value={selectedDecoration.height}
-            min={0.2}
-            onChange={(value) => onUpdateSelectedDecoration({ height: value })}
-          />
+            <NumberInput
+              label={t("widthM")}
+              value={selectedDecoration.width}
+              min={0.2}
+              step={0.5}
+              onChange={(value) => onUpdateSelectedDecoration({ width: value })}
+            />
 
-          <NumberInput
-            label={t("rotationDeg")}
-            value={selectedDecoration.rotation}
-            min={-360}
-            onChange={(value) =>
-              onUpdateSelectedDecoration({ rotation: value })
-            }
-          />
+            <NumberInput
+              label={t("heightM")}
+              value={selectedDecoration.height}
+              min={0.2}
+              step={0.5}
+              onChange={(value) => onUpdateSelectedDecoration({ height: value })}
+            />
+
+            <NumberInput
+              label={t("rotationDeg")}
+              value={selectedDecoration.rotation}
+              min={-360}
+              max={360}
+              step={1}
+              onChange={(value) =>
+                onUpdateSelectedDecoration({ rotation: value })
+              }
+            />
+          </DetailsSection>
 
           {selectedDecoration.type === "text" && (
-            <>
+            <DetailsSection title={t("content")} nested defaultOpen>
               <label style={fieldLabelStyle}>
-                {t("text")}
+                <span>{t("text")}</span>
                 <textarea
                   value={selectedDecoration.text}
                   onChange={(event) =>
@@ -396,15 +495,25 @@ export function LeftInspector({
                 label={t("fontSizePx")}
                 value={selectedDecoration.fontSize}
                 min={6}
+                step={1}
                 onChange={(value) =>
                   onUpdateSelectedDecoration({
                     fontSize: value,
                   } as Partial<Decoration>)
                 }
               />
+            </DetailsSection>
+          )}
 
+          {(selectedDecoration.type === "text" ||
+            selectedDecoration.type === "arrow") && (
+            <DetailsSection title={t("appearance")} nested>
               <ColorInput
-                label={t("textColor")}
+                label={
+                  selectedDecoration.type === "text"
+                    ? t("textColor")
+                    : t("coneColor")
+                }
                 value={selectedDecoration.color}
                 onChange={(value) =>
                   onUpdateSelectedDecoration({
@@ -412,18 +521,48 @@ export function LeftInspector({
                   } as Partial<Decoration>)
                 }
               />
-            </>
+            </DetailsSection>
           )}
 
           {selectedDecoration.type === "image" && (
-            <p style={{ fontSize: 14, color: "var(--st-text-muted)" }}>
-              {t("file")}: {selectedDecoration.name}
-            </p>
+            <DetailsSection title={t("advanced")} nested>
+              <p style={mutedTextStyle}>
+                {t("file")}: {selectedDecoration.name}
+              </p>
+            </DetailsSection>
           )}
-        </section>
+        </ObjectPanel>
       )}
     </aside>
   );
+}
+
+function getSelectedTitle({
+  selectedRect,
+  selectedFigure,
+  selectedFigureTemplate,
+  selectedDecoration,
+  t,
+}: {
+  selectedRect: CourseRect | null;
+  selectedFigure: FigureInstance | null;
+  selectedFigureTemplate: FigureTemplate | null;
+  selectedDecoration: Decoration | null;
+  t: (key: TranslationKey) => string;
+}) {
+  if (selectedRect) return t("workspace");
+  if (selectedFigure) return selectedFigureTemplate?.name ?? t("figure");
+  if (selectedDecoration) return getDecorationTitle(selectedDecoration, t);
+  return null;
+}
+
+function getDecorationTitle(
+  decoration: Decoration,
+  t: (key: TranslationKey) => string
+) {
+  if (decoration.type === "text") return t("text");
+  if (decoration.type === "arrow") return t("arrowStraight");
+  return t("imageLogo");
 }
 
 function translateCourseMessage(
@@ -447,38 +586,142 @@ function translateCourseMessage(
   return message;
 }
 
+function ObjectPanel({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section style={objectPanelStyle}>
+      <header style={objectPanelHeaderStyle}>
+        <h3 style={objectTitleStyle}>{title}</h3>
+        {subtitle && <p style={objectSubtitleStyle}>{subtitle}</p>}
+      </header>
+
+      <div style={objectPanelBodyStyle}>{children}</div>
+    </section>
+  );
+}
+
+function DetailsSection({
+  title,
+  subtitle,
+  nested = false,
+  defaultOpen = false,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  nested?: boolean;
+  defaultOpen?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <details open={defaultOpen} style={nested ? nestedDetailsStyle : detailsStyle}>
+      <summary style={summaryStyle}>
+        <span>{title}</span>
+        {subtitle && <small>{subtitle}</small>}
+      </summary>
+
+      <div style={detailsBodyStyle}>{children}</div>
+    </details>
+  );
+}
+
+function StatusCard({
+  tone,
+  title,
+  children,
+}: {
+  tone: "success" | "error" | "warning";
+  title: string;
+  children: ReactNode;
+}) {
+  const toneStyle =
+    tone === "success"
+      ? successCardStyle
+      : tone === "warning"
+        ? warningCardStyle
+        : errorCardStyle;
+
+  return (
+    <section style={{ ...statusCardStyle, ...toneStyle }}>
+      <strong>{title}</strong>
+      {children}
+    </section>
+  );
+}
+
+function MetricGrid({
+  items,
+}: {
+  items: {
+    label: string;
+    value: string;
+  }[];
+}) {
+  return (
+    <div style={metricGridStyle}>
+      {items.map((item) => (
+        <div key={item.label} style={metricCardStyle}>
+          <span>{item.label}</span>
+          <strong>{item.value}</strong>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ButtonGrid({ children }: { children: ReactNode }) {
+  return <div style={buttonGridStyle}>{children}</div>;
+}
+
 type NumberInputProps = {
   label: string;
   value: number;
   min?: number;
   max?: number;
   step?: number;
+  disabled?: boolean;
   onChange: (value: number) => void;
 };
 
 function NumberInput({
   label,
   value,
-  min = 0,
+  min,
   max,
   step = 0.5,
+  disabled = false,
   onChange,
 }: NumberInputProps) {
   return (
     <label style={fieldLabelStyle}>
-      {label}
+      <span>{label}</span>
       <input
         type="number"
         value={value}
         min={min}
         max={max}
         step={step}
+        disabled={disabled}
         onChange={(event) => {
           const nextValue = Number(event.target.value);
 
-          if (Number.isFinite(nextValue)) {
-            onChange(Math.max(min, nextValue));
+          if (!Number.isFinite(nextValue)) {
+            return;
           }
+
+          const minChecked =
+            typeof min === "number" ? Math.max(min, nextValue) : nextValue;
+          const maxChecked =
+            typeof max === "number" ? Math.min(max, minChecked) : minChecked;
+
+          onChange(maxChecked);
         }}
         style={inputStyle}
       />
@@ -495,17 +738,18 @@ type ColorInputProps = {
 function ColorInput({ label, value, onChange }: ColorInputProps) {
   return (
     <label style={fieldLabelStyle}>
-      {label}
-      <input
-        type="color"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        style={{
-          ...inputStyle,
-          height: 36,
-          padding: 2,
-        }}
-      />
+      <span>{label}</span>
+
+      <div style={colorRowStyle}>
+        <input
+          type="color"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          style={colorInputStyle}
+        />
+
+        <code style={colorCodeStyle}>{value.toUpperCase()}</code>
+      </div>
     </label>
   );
 }
@@ -523,16 +767,32 @@ function CheckboxInput({ label, checked, onChange }: CheckboxInputProps) {
         type="checkbox"
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
-        style={{ marginRight: 6 }}
       />
-      {label}
+      <span>{label}</span>
     </label>
   );
 }
 
+function formatPosition(x: number, y: number) {
+  return `${formatNumber(x)} / ${formatNumber(y)} m`;
+}
+
+function formatSize(width: number, height: number) {
+  return `${formatNumber(width)} × ${formatNumber(height)} m`;
+}
+
+function formatDegrees(value: number) {
+  return `${formatNumber(value)}°`;
+}
+
+function formatNumber(value: number) {
+  const rounded = Math.round(value * 100) / 100;
+  return rounded.toFixed(2).replace(/\.?0+$/, "");
+}
+
 const inspectorStyle: CSSProperties = {
-  width: 280,
-  padding: 16,
+  width: 300,
+  padding: 14,
   borderRight: "1px solid var(--st-border)",
   boxSizing: "border-box",
   fontFamily: "sans-serif",
@@ -541,48 +801,218 @@ const inspectorStyle: CSSProperties = {
   color: "var(--st-text)",
 };
 
-const statusCardStyle: CSSProperties = {
-  padding: 10,
-  borderRadius: 6,
-  fontSize: 14,
-  color: "var(--st-text)",
+const inspectorHeaderStyle: CSSProperties = {
+  marginBottom: 12,
 };
 
-const sectionStyle: CSSProperties = {
-  marginTop: 24,
+const eyebrowStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--st-text-muted)",
+  fontSize: 11,
+  fontWeight: 800,
+  letterSpacing: "0.06em",
+  textTransform: "uppercase",
+};
+
+const inspectorTitleStyle: CSSProperties = {
+  margin: "3px 0 0",
+  fontSize: 18,
+  lineHeight: 1.2,
+};
+
+const statusCardStyle: CSSProperties = {
+  padding: 10,
+  borderRadius: 10,
+  fontSize: 13,
+  color: "var(--st-text)",
+  marginBottom: 10,
+};
+
+const successCardStyle: CSSProperties = {
+  background: "var(--st-success-bg)",
+  border: "1px solid var(--st-success-border)",
+};
+
+const warningCardStyle: CSSProperties = {
+  background: "var(--st-warning-bg)",
+  border: "1px solid var(--st-warning-border)",
+};
+
+const errorCardStyle: CSSProperties = {
+  background: "var(--st-error-bg)",
+  border: "1px solid var(--st-error-border)",
+};
+
+const statusTextStyle: CSSProperties = {
+  margin: "6px 0 0",
+  lineHeight: 1.35,
+};
+
+const emptyStateStyle: CSSProperties = {
+  marginTop: 14,
+  padding: 12,
+  borderRadius: 10,
+  border: "1px dashed var(--st-border)",
+  background: "var(--st-card)",
+  color: "var(--st-text-muted)",
+  fontSize: 13,
+  lineHeight: 1.4,
+};
+
+const objectPanelStyle: CSSProperties = {
+  marginTop: 12,
+  border: "1px solid var(--st-border-soft)",
+  borderRadius: 12,
+  background: "var(--st-card-soft)",
+  overflow: "hidden",
+};
+
+const objectPanelHeaderStyle: CSSProperties = {
+  padding: "12px 12px 8px",
+  borderBottom: "1px solid var(--st-border-soft)",
+  background: "var(--st-card)",
+};
+
+const objectTitleStyle: CSSProperties = {
+  margin: 0,
+  fontSize: 16,
+};
+
+const objectSubtitleStyle: CSSProperties = {
+  margin: "4px 0 0",
+  color: "var(--st-text-muted)",
+  fontSize: 13,
+};
+
+const objectPanelBodyStyle: CSSProperties = {
+  display: "grid",
+  gap: 10,
+  padding: 10,
+};
+
+const detailsStyle: CSSProperties = {
+  marginTop: 10,
+  border: "1px solid var(--st-border-soft)",
+  borderRadius: 10,
+  background: "var(--st-card)",
+  overflow: "hidden",
+};
+
+const nestedDetailsStyle: CSSProperties = {
+  border: "1px solid var(--st-border-soft)",
+  borderRadius: 9,
+  background: "var(--st-card)",
+  overflow: "hidden",
+};
+
+const summaryStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 8,
+  padding: "9px 10px",
+  cursor: "pointer",
+  fontSize: 13,
+  fontWeight: 800,
+};
+
+const detailsBodyStyle: CSSProperties = {
+  display: "grid",
+  gap: 9,
+  padding: "0 10px 10px",
+};
+
+const metricGridStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr",
+  gap: 8,
+};
+
+const metricCardStyle: CSSProperties = {
+  display: "grid",
+  gap: 3,
+  padding: "8px 9px",
+  borderRadius: 9,
+  background: "var(--st-card)",
+  border: "1px solid var(--st-border-soft)",
+  fontSize: 12,
 };
 
 const fieldLabelStyle: CSSProperties = {
-  display: "block",
-  marginBottom: 12,
-  fontSize: 14,
+  display: "grid",
+  gap: 5,
+  fontSize: 13,
   color: "var(--st-text)",
 };
 
 const checkboxLabelStyle: CSSProperties = {
-  display: "block",
-  marginBottom: 12,
-  fontSize: 14,
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  fontSize: 13,
   color: "var(--st-text)",
 };
 
 const inputStyle: CSSProperties = {
-  display: "block",
   width: "100%",
-  marginTop: 4,
+  height: 32,
   boxSizing: "border-box",
+  padding: "0 8px",
+  borderRadius: 7,
   background: "var(--st-card)",
   color: "var(--st-text)",
   border: "1px solid var(--st-border)",
 };
 
 const textareaStyle: CSSProperties = {
-  display: "block",
   width: "100%",
-  marginTop: 4,
   boxSizing: "border-box",
+  padding: 8,
+  borderRadius: 7,
   resize: "vertical",
   background: "var(--st-card)",
   color: "var(--st-text)",
   border: "1px solid var(--st-border)",
+};
+
+const colorRowStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+};
+
+const colorInputStyle: CSSProperties = {
+  width: 42,
+  height: 28,
+  padding: 2,
+  borderRadius: 7,
+  border: "1px solid var(--st-border)",
+  background: "var(--st-card)",
+};
+
+const colorCodeStyle: CSSProperties = {
+  fontSize: 12,
+  color: "var(--st-text-muted)",
+};
+
+const buttonGridStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr",
+  gap: 8,
+};
+
+const secondaryButtonStyle: CSSProperties = {
+  minHeight: 32,
+  padding: "0 9px",
+  borderRadius: 8,
+  border: "1px solid var(--st-border-soft)",
+  background: "var(--st-card)",
+  color: "var(--st-text)",
+  fontWeight: 700,
+};
+
+const mutedTextStyle: CSSProperties = {
+  margin: 0,
+  fontSize: 13,
+  color: "var(--st-text-muted)",
 };

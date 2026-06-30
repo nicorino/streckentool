@@ -8,11 +8,14 @@ import {
 } from "react";
 import { TopToolbar } from "../components/TopToolbar";
 import type { EditorTool } from "../components/TopToolbar";
+import type { ExportPngOptions } from "../components/ExportDialog";
+import { exportCoursePdf } from "../export/exportPdf";
 import { LeftInspector } from "../components/LeftInspector";
 import { RightFigureLibrary } from "../components/RightFigureLibrary";
 import { ProjectMetadataPanel } from "../components/ProjectMetadataPanel";
 import { CalibrationDialog } from "../components/CalibrationDialog";
 import { NewProjectDialog } from "../components/NewProjectDialog";
+import { TutorialOverlay } from "../components/TutorialOverlay";
 import {
   EditorCanvas,
   type EditorCanvasHandle,
@@ -39,7 +42,12 @@ import {
   importCustomFigureTemplatesFromJsonText,
   useCustomFigureTemplates,
 } from "../figures/customFigureStorage";
-import { useAppLanguage } from "../i18n/i18n";
+import {
+  createDefaultFigureConfig,
+  getLibraryFigureTemplates,
+  withConfigurableFigureTemplates,
+} from "../figures/figureConfig";
+import { type TranslationKey, useAppLanguage } from "../i18n/i18n";
 import {
   getExportBounds,
   getExportFormatLabel,
@@ -69,12 +77,24 @@ export function EditorPage() {
   const { t } = useAppLanguage();
   const editorCanvasRef = useRef<EditorCanvasHandle>(null);
   const editorHistory = useUndoRedo<EditorState>(createEmptyEditorState());
+  const [lastCleanProjectJson, setLastCleanProjectJson] = useState(() =>
+    JSON.stringify(createStreckentoolProject(createEmptyEditorState()))
+  );
 
   const { templates: customFigureTemplates } = useCustomFigureTemplates();
 
   const figureTemplates = useMemo(
-    () => [...FIGURE_TEMPLATES, ...customFigureTemplates],
+    () =>
+      withConfigurableFigureTemplates([
+        ...FIGURE_TEMPLATES,
+        ...customFigureTemplates,
+      ]),
     [customFigureTemplates]
+  );
+
+  const libraryFigureTemplates = useMemo(
+    () => getLibraryFigureTemplates(figureTemplates),
+    [figureTemplates]
   );
 
   const editorState = editorHistory.value;
@@ -84,6 +104,12 @@ export function EditorPage() {
   const measurements = editorState.measurements;
   const backgroundImage = editorState.backgroundImage;
   const metadata = editorState.metadata;
+
+  const currentProjectJson = useMemo(
+    () => JSON.stringify(createStreckentoolProject(editorState)),
+    [editorState]
+  );
+  const hasUnsavedChanges = currentProjectJson !== lastCleanProjectJson;
 
   const [selection, setSelection] = useState<Selection | null>(null);
   const [printPreview, setPrintPreview] = useState(false);
@@ -104,11 +130,12 @@ export function EditorPage() {
   const [calibrationDraft, setCalibrationDraft] =
     useState<CalibrationDraft | null>(null);
   const [showNewProjectDialog, setShowNewProjectDialog] = useState(false);
+  const [showTutorialOverlay, setShowTutorialOverlay] = useState(false);
 
   const [zoom, setZoom] = useState(1);
   const [viewPosition, setViewPosition] = useState<ViewPosition>({
-    x: 0,
-    y: 0,
+    x: 260,
+    y: 190,
   });
 
   const selectedRect =
@@ -164,6 +191,16 @@ export function EditorPage() {
   const zoomPercent = Math.round(zoom * 100);
 
   const effectiveSnapToGrid = activeTool === "calibrate" ? false : snapToGrid;
+  const statusHint = t(
+    getEditorStatusHint({
+      activeTool,
+      hasSelection: selection !== null,
+      pendingArrowKind,
+      pendingFigureTemplateId,
+      pendingMeasurementStart,
+      pendingCalibrationStart,
+    })
+  );
 
   function addRectangle() {
     const id = createId();
@@ -218,6 +255,11 @@ export function EditorPage() {
           rotation: 0,
           mirrored: false,
           coneColor: DEFAULT_CONE_COLOR,
+          config: createDefaultFigureConfig(
+            figureTemplates.find(
+              (template) => template.id === pendingFigureTemplateId
+            ) ?? figureTemplates[0]
+          ),
         },
       ],
     }));
@@ -448,7 +490,10 @@ export function EditorPage() {
   }
 
   function confirmNewProject() {
-    editorHistory.reset(createEmptyEditorState());
+    const nextState = createEmptyEditorState();
+
+    editorHistory.reset(nextState);
+    setLastCleanProjectJson(JSON.stringify(createStreckentoolProject(nextState)));
 
     setSelection(null);
     setPrintPreview(false);
@@ -465,8 +510,8 @@ export function EditorPage() {
 
     setZoom(1);
     setViewPosition({
-      x: 0,
-      y: 0,
+      x: 260,
+      y: 190,
     });
 
     setShowNewProjectDialog(false);
@@ -737,8 +782,8 @@ export function EditorPage() {
   function resetZoom() {
     setZoom(1);
     setViewPosition({
-      x: 0,
-      y: 0,
+      x: 260,
+      y: 190,
     });
   }
 
@@ -773,6 +818,7 @@ export function EditorPage() {
 
   function saveProject() {
     const project = createStreckentoolProject(editorState);
+    const cleanJson = JSON.stringify(project);
     const json = JSON.stringify(project, null, 2);
 
     const blob = new Blob([json], {
@@ -789,16 +835,70 @@ export function EditorPage() {
     link.click();
 
     URL.revokeObjectURL(url);
+    setLastCleanProjectJson(cleanJson);
   }
 
-  function exportPng() {
+  async function exportPng(options?: ExportPngOptions) {
     const date = new Date().toISOString().slice(0, 10);
+    const fileType = options?.fileType ?? "png";
+    const nextExportFormat = options?.exportFormat ?? exportFormat;
 
-    void editorCanvasRef.current?.exportPng({
-      fileName: `streckentool-${date}.png`,
-      boundsMeters: exportBounds,
-      pixelRatio: 3,
+    const nextExportBounds = getExportBounds(
+      rects,
+      figures,
+      figureTemplates,
+      decorations,
+      measurements,
+      nextExportFormat
+    );
+
+    const fileName =
+      options?.fileName || `streckentool-${date}.${fileType}`;
+
+    if (fileType === "pdf") {
+      const exportedImage = await editorCanvasRef.current?.exportImageDataUrl({
+        boundsMeters: nextExportBounds,
+        pixelRatio: options?.pixelRatio ?? 3,
+      });
+
+      if (!exportedImage) {
+        return;
+      }
+
+      exportCoursePdf({
+        fileName,
+        imageDataUrl: exportedImage.dataUrl,
+        imagePixelWidth: exportedImage.width,
+        imagePixelHeight: exportedImage.height,
+        exportFormat: nextExportFormat,
+      });
+
+      return;
+    }
+
+    await editorCanvasRef.current?.exportPng({
+      fileName,
+      boundsMeters: nextExportBounds,
+      pixelRatio: options?.pixelRatio ?? 3,
     });
+  }
+
+  async function createExportPreview(nextExportFormat: ExportFormat) {
+    const nextExportBounds = getExportBounds(
+      rects,
+      figures,
+      figureTemplates,
+      decorations,
+      measurements,
+      nextExportFormat
+    );
+
+    const exportedImage = await editorCanvasRef.current?.exportImageDataUrl({
+      boundsMeters: nextExportBounds,
+      pixelRatio: 0.35,
+    });
+
+    return exportedImage?.dataUrl ?? null;
   }
 
   async function loadProjectFile(file: File) {
@@ -902,7 +1002,9 @@ export function EditorPage() {
         onSaveProject={saveProject}
         onLoadProjectFile={loadProjectFile}
         onImportCreatorJson={handleImportCreatorJson}
+        onStartTutorial={() => setShowTutorialOverlay(true)}
         onExportPng={exportPng}
+        onCreateExportPreview={createExportPreview}
         exportFormat={exportFormat}
         onChangeExportFormat={setExportFormat}
         zoomPercent={zoomPercent}
@@ -919,7 +1021,12 @@ export function EditorPage() {
         onToggleShowHelperLines={() =>
           setShowHelperLines((current) => !current)
         }
+        hasUnsavedChanges={hasUnsavedChanges}
       />
+
+      <div style={statusHintBarStyle} aria-live="polite">
+        {statusHint}
+      </div>
 
       <div
         style={{
@@ -946,6 +1053,7 @@ export function EditorPage() {
         />
 
         <div
+          data-tutorial-target="tutorial-canvas"
           style={{
             flex: 1,
             minWidth: 0,
@@ -1012,7 +1120,7 @@ export function EditorPage() {
         </div>
 
         <RightFigureLibrary
-          figureTemplates={figureTemplates}
+          figureTemplates={libraryFigureTemplates}
           onAddFigure={addFigure}
         />
       </div>
@@ -1031,8 +1139,54 @@ export function EditorPage() {
           onCancel={() => setShowNewProjectDialog(false)}
         />
       )}
+
+      {showTutorialOverlay && (
+        <TutorialOverlay onClose={() => setShowTutorialOverlay(false)} />
+      )}
     </div>
   );
+}
+
+function getEditorStatusHint({
+  activeTool,
+  hasSelection,
+  pendingArrowKind,
+  pendingFigureTemplateId,
+  pendingMeasurementStart,
+  pendingCalibrationStart,
+}: {
+  activeTool: EditorTool;
+  hasSelection: boolean;
+  pendingArrowKind: ArrowKind | null;
+  pendingFigureTemplateId: string | null;
+  pendingMeasurementStart: CanvasPoint | null;
+  pendingCalibrationStart: CanvasPoint | null;
+}): TranslationKey {
+  if (pendingFigureTemplateId) {
+    return "statusPlaceFigure";
+  }
+
+  if (pendingArrowKind) {
+    return "statusPlaceArrow";
+  }
+
+  if (activeTool === "measure") {
+    return pendingMeasurementStart
+      ? "statusMeasureSecond"
+      : "statusMeasureFirst";
+  }
+
+  if (activeTool === "calibrate") {
+    return pendingCalibrationStart
+      ? "statusCalibrateSecond"
+      : "statusCalibrateFirst";
+  }
+
+  if (hasSelection) {
+    return "statusEditSelection";
+  }
+
+  return "statusReady";
 }
 
 function readFileAsDataUrl(file: File) {
@@ -1080,6 +1234,22 @@ function getImageSize(src: string) {
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }
+
+const statusHintBarStyle = {
+  height: 28,
+  display: "flex",
+  alignItems: "center",
+  padding: "0 14px",
+  boxSizing: "border-box" as const,
+  borderBottom: "1px solid var(--st-border-soft)",
+  background: "var(--st-card-soft)",
+  color: "var(--st-text-muted)",
+  fontFamily: "sans-serif",
+  fontSize: 13,
+  whiteSpace: "nowrap" as const,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+};
 
 const snapFloatingControlStyle = {
   position: "absolute" as const,

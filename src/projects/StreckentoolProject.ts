@@ -341,9 +341,27 @@ function isFigureInstance(value: unknown): value is PersistedFigureInstance {
     typeof value.rotation === "number" &&
     typeof value.mirrored === "boolean" &&
     (value.coneColor === undefined || typeof value.coneColor === "string") &&
+    (value.config === undefined || isFigureConfig(value.config)) &&
     Number.isFinite(value.x) &&
     Number.isFinite(value.y) &&
     Number.isFinite(value.rotation)
+  );
+}
+
+
+function isFigureConfig(value: unknown) {
+  if (!isRecord(value)) return false;
+
+  return (
+    (value.scaleX === undefined ||
+      (typeof value.scaleX === "number" && Number.isFinite(value.scaleX))) &&
+    (value.scaleY === undefined ||
+      (typeof value.scaleY === "number" && Number.isFinite(value.scaleY))) &&
+    (value.coneCount === undefined ||
+      (typeof value.coneCount === "number" && Number.isFinite(value.coneCount))) &&
+    (value.coneDistanceMeters === undefined ||
+      (typeof value.coneDistanceMeters === "number" &&
+        Number.isFinite(value.coneDistanceMeters)))
   );
 }
 

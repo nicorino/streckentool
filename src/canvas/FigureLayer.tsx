@@ -12,6 +12,10 @@ import {
 import type { FigureInstance, FigureTemplate } from "../types/Figure";
 import type { Selection } from "../types/Selection";
 import {
+  getFigureLocalBounds,
+  getResolvedFigureElements,
+} from "../figures/figureConfig";
+import {
   metersToPixels,
   pixelsToMeters,
   snapMeters,
@@ -120,7 +124,8 @@ function FigureNode({
     figure.mirrored,
   ]);
 
-  const bounds = getTemplateBounds(template);
+  const bounds = getFigureLocalBounds(template, figure);
+  const resolvedElements = getResolvedFigureElements(template, figure);
   const hitboxPaddingMeters = 0.6;
 
   const hitboxBounds = {
@@ -211,7 +216,7 @@ function FigureNode({
           />
         )}
 
-        {template.elements.map((element, index) => {
+        {resolvedElements.map((element, index) => {
           if (element.type === "cone") {
             return (
               <Circle
@@ -281,37 +286,6 @@ function FigureNode({
       )}
     </>
   );
-}
-
-function getTemplateBounds(template: FigureTemplate) {
-  const xs: number[] = [];
-  const ys: number[] = [];
-
-  for (const element of template.elements) {
-    if (element.type === "cone") {
-      xs.push(element.x - element.radius, element.x + element.radius);
-      ys.push(element.y - element.radius, element.y + element.radius);
-    } else {
-      xs.push(element.x1, element.x2);
-      ys.push(element.y1, element.y2);
-    }
-  }
-
-  if (xs.length === 0 || ys.length === 0) {
-    return {
-      left: -0.5,
-      right: 0.5,
-      top: -0.5,
-      bottom: 0.5,
-    };
-  }
-
-  return {
-    left: Math.min(...xs),
-    right: Math.max(...xs),
-    top: Math.min(...ys),
-    bottom: Math.max(...ys),
-  };
 }
 
 function normalizeRotation(rotation: number) {

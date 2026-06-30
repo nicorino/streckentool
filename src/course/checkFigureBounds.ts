@@ -5,6 +5,7 @@ import type {
   FigureTemplate,
 } from "../types/Figure";
 import { isPointInsideWorkspace } from "./workspaceGeometry";
+import { getResolvedFigureElements } from "../figures/figureConfig";
 
 export type FigureBoundsWarning = {
   figureId: string;
@@ -26,7 +27,7 @@ export function getFigureBoundsWarnings(
         return null;
       }
 
-      const worldConePoints = template.elements
+      const worldConePoints = getResolvedFigureElements(template, figure)
         .filter(isConeElement)
         .map((cone) =>
           transformLocalPointToWorld(

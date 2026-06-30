@@ -3,6 +3,7 @@ import type { FigureInstance, FigureTemplate } from "../types/Figure";
 import type { Decoration } from "../types/Decoration";
 import type { Measurement } from "../types/Measurement";
 import { getWorkspaceCorners } from "../course/workspaceGeometry";
+import { getFigureLocalBounds } from "../figures/figureConfig";
 
 export type ExportFormat = "content" | "a4-landscape" | "a4-portrait";
 
@@ -53,7 +54,7 @@ export function getProjectBounds(
 
     if (!template) continue;
 
-    addRotatedLocalBounds(bounds, getTemplateBounds(template), {
+    addRotatedLocalBounds(bounds, getFigureLocalBounds(template, figure), {
       x: figure.x,
       y: figure.y,
       rotation: figure.rotation,
@@ -94,8 +95,8 @@ export function getProjectBounds(
   }
 
   return {
-    left: Math.max(0, bounds.left - marginMeters),
-    top: Math.max(0, bounds.top - marginMeters),
+    left: bounds.left - marginMeters,
+    top: bounds.top - marginMeters,
     right: bounds.right + marginMeters,
     bottom: bounds.bottom + marginMeters,
   };
@@ -193,16 +194,6 @@ function expandBoundsToAspectRatio(
   let right = centerX + nextWidth / 2;
   let bottom = centerY + nextHeight / 2;
 
-  if (left < 0) {
-    right += -left;
-    left = 0;
-  }
-
-  if (top < 0) {
-    bottom += -top;
-    top = 0;
-  }
-
   return {
     left,
     top,
@@ -227,33 +218,3 @@ function addPoint(bounds: MutableBounds, x: number, y: number) {
   bounds.bottom = Math.max(bounds.bottom, y);
 }
 
-function getTemplateBounds(template: FigureTemplate) {
-  const xs: number[] = [];
-  const ys: number[] = [];
-
-  for (const element of template.elements) {
-    if (element.type === "cone") {
-      xs.push(element.x - element.radius, element.x + element.radius);
-      ys.push(element.y - element.radius, element.y + element.radius);
-    } else {
-      xs.push(element.x1, element.x2);
-      ys.push(element.y1, element.y2);
-    }
-  }
-
-  if (xs.length === 0 || ys.length === 0) {
-    return {
-      left: -0.5,
-      right: 0.5,
-      top: -0.5,
-      bottom: 0.5,
-    };
-  }
-
-  return {
-    left: Math.min(...xs),
-    right: Math.max(...xs),
-    top: Math.min(...ys),
-    bottom: Math.max(...ys),
-  };
-}
