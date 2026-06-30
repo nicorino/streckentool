@@ -1,191 +1,296 @@
 import type { CSSProperties } from "react";
 import {
+  BookOpen,
+  MousePointer2,
+  Play,
+  Sparkles,
+} from "lucide-react";
+import {
   SUPPORTED_LANGUAGES,
   type AppLanguage,
   useAppLanguage,
 } from "../i18n/i18n";
-import { type AppTheme, useAppTheme } from "../theme/theme";
-
-export type { AppLanguage } from "../i18n/i18n";
 
 const WIKI_URL = "https://example.com/wiki-placeholder";
 const PAYPAL_URL = "https://example.com/paypal-placeholder";
 
 type WelcomeModalProps = {
   onClose?: () => void;
-  [key: string]: unknown;
+  onDismiss?: () => void;
+  onStart?: () => void;
+  onContinue?: () => void;
 };
 
-export function WelcomeModal({ onClose }: WelcomeModalProps) {
+export function WelcomeModal({
+  onClose,
+  onDismiss,
+  onStart,
+  onContinue,
+}: WelcomeModalProps) {
   const { language, setLanguage, t } = useAppLanguage();
-  const { theme, setTheme } = useAppTheme();
+
+  function closeWelcome() {
+    onClose?.();
+    onDismiss?.();
+    onStart?.();
+    onContinue?.();
+  }
+
+  function startEmptyProject() {
+    closeWelcome();
+  }
+
+  function loadExampleProject() {
+    window.dispatchEvent(new CustomEvent("streckentool-welcome-load-example"));
+    closeWelcome();
+  }
+
+  function startTutorial() {
+    window.dispatchEvent(new CustomEvent("streckentool-welcome-start-tutorial"));
+    closeWelcome();
+  }
 
   return (
-    <div style={backdropStyle}>
+    <div style={overlayStyle}>
       <section style={dialogStyle}>
-        <h1 style={{ marginTop: 0, marginBottom: 10 }}>
-          {t("welcomeTitle")}
-        </h1>
-
-        <p style={paragraphStyle}>{t("welcomeIntro")}</p>
-
-        <p style={privacyNoteStyle}>{t("welcomePrivacyNote")}</p>
-
-        <div style={settingsGridStyle}>
-          <label style={labelStyle}>
-            {t("welcomeLanguageLabel")}
-            <select
-              value={language}
-              onChange={(event) =>
-                setLanguage(event.target.value as AppLanguage)
-              }
-              style={selectStyle}
-            >
-              {SUPPORTED_LANGUAGES.map((supportedLanguage) => (
-                <option
-                  key={supportedLanguage.code}
-                  value={supportedLanguage.code}
-                >
-                  {supportedLanguage.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label style={labelStyle}>
-            {t("theme")}
-            <select
-              value={theme}
-              onChange={(event) => setTheme(event.target.value as AppTheme)}
-              style={selectStyle}
-            >
-              <option value="light">{t("lightMode")}</option>
-              <option value="dark">{t("darkMode")}</option>
-            </select>
-          </label>
+        <div style={heroStyle}>
+          <img
+            src="/streckentool-logo.png"
+            alt={t("appName")}
+            style={logoStyle}
+          />
         </div>
 
-        <div style={linkRowStyle}>
-          <a
-            href={WIKI_URL}
-            target="_blank"
-            rel="noreferrer"
-            style={secondaryLinkStyle}
-          >
-            {t("welcomeWikiText")}
-          </a>
+        <div style={contentStyle}>
+          <header>
+            <h1 style={titleStyle}>{t("welcomeTitle")}</h1>
+            <p style={introStyle}>{t("welcomeIntro")}</p>
+          </header>
 
-          <a
-            href={PAYPAL_URL}
-            target="_blank"
-            rel="noreferrer"
-            style={secondaryLinkStyle}
-          >
-            {t("welcomeSupportText")}
-          </a>
-        </div>
+          <div style={choiceGridStyle}>
+            <button
+              type="button"
+              onClick={startEmptyProject}
+              style={primaryChoiceStyle}
+            >
+              <Play size={20} strokeWidth={2.4} />
+              <span>
+                <strong>{t("welcomeStartEmptyTitle")}</strong>
+                <small>{t("welcomeStartEmptyBody")}</small>
+              </span>
+            </button>
 
-        <div style={buttonRowStyle}>
-          <button type="button" onClick={onClose} style={primaryButtonStyle}>
-            {t("welcomeStart")}
-          </button>
+            <button
+              type="button"
+              onClick={loadExampleProject}
+              style={choiceStyle}
+            >
+              <Sparkles size={20} strokeWidth={2.4} />
+              <span>
+                <strong>{t("welcomeExampleTitle")}</strong>
+                <small>{t("welcomeExampleBody")}</small>
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={startTutorial}
+              style={choiceStyle}
+            >
+              <MousePointer2 size={20} strokeWidth={2.4} />
+              <span>
+                <strong>{t("welcomeTutorialTitle")}</strong>
+                <small>{t("welcomeTutorialBody")}</small>
+              </span>
+            </button>
+          </div>
+
+          <p style={privacyStyle}>{t("welcomePrivacyNote")}</p>
+
+          <div style={footerStyle}>
+            <label style={languageLabelStyle}>
+              {t("welcomeLanguageLabel")}
+              <select
+                value={language}
+                onChange={(event) =>
+                  setLanguage(event.target.value as AppLanguage)
+                }
+                style={selectStyle}
+              >
+                {SUPPORTED_LANGUAGES.map((supportedLanguage) => (
+                  <option
+                    key={supportedLanguage.code}
+                    value={supportedLanguage.code}
+                  >
+                    {supportedLanguage.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <div style={linkGroupStyle}>
+              <a href={WIKI_URL} target="_blank" rel="noreferrer" style={linkStyle}>
+                <BookOpen size={15} strokeWidth={2.3} />
+                {t("welcomeWikiText")}
+              </a>
+
+              <a
+                href={PAYPAL_URL}
+                target="_blank"
+                rel="noreferrer"
+                style={linkStyle}
+              >
+                {t("welcomeSupportText")}
+              </a>
+            </div>
+          </div>
         </div>
       </section>
     </div>
   );
 }
 
-const backdropStyle = {
+const overlayStyle: CSSProperties = {
   position: "fixed",
   inset: 0,
-  zIndex: 1400,
-  background: "rgba(0,0,0,0.58)",
+  zIndex: 120,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  padding: 20,
-} satisfies CSSProperties;
-
-const dialogStyle = {
-  width: "min(560px, 100%)",
-  background: "var(--st-card)",
-  color: "var(--st-text)",
-  border: "1px solid var(--st-border)",
-  borderRadius: 12,
-  padding: 26,
-  boxShadow: "0 24px 70px rgba(0,0,0,0.38)",
-  fontFamily: "sans-serif",
-} satisfies CSSProperties;
-
-const paragraphStyle = {
-  fontSize: 15,
-  lineHeight: 1.55,
-  margin: "0 0 14px",
-} satisfies CSSProperties;
-
-const privacyNoteStyle = {
-  fontSize: 13,
-  lineHeight: 1.45,
-  margin: "0 0 18px",
-  color: "var(--st-text-muted)",
-  background: "var(--st-card-soft)",
-  border: "1px solid var(--st-border)",
-  borderRadius: 6,
-  padding: 10,
-} satisfies CSSProperties;
-
-const settingsGridStyle = {
-  display: "grid",
-  gridTemplateColumns: "1fr 1fr",
-  gap: 12,
-  marginBottom: 16,
-} satisfies CSSProperties;
-
-const labelStyle = {
-  display: "block",
-  fontSize: 14,
-} satisfies CSSProperties;
-
-const selectStyle = {
-  display: "block",
-  width: "100%",
+  padding: 24,
   boxSizing: "border-box",
-  marginTop: 6,
-  padding: "7px 8px",
-  background: "var(--st-card-soft)",
-  color: "var(--st-text)",
-  border: "1px solid var(--st-border)",
-} satisfies CSSProperties;
+  background: "rgba(0,0,0,0.48)",
+  fontFamily: "sans-serif",
+};
 
-const linkRowStyle = {
+const dialogStyle: CSSProperties = {
+  width: "min(760px, calc(100vw - 48px))",
+  display: "grid",
+  gridTemplateColumns: "240px 1fr",
+  borderRadius: 18,
+  border: "1px solid var(--st-border)",
+  overflow: "hidden",
+  background: "var(--st-panel)",
+  color: "var(--st-text)",
+  boxShadow: "0 30px 90px rgba(0,0,0,0.45)",
+};
+
+const heroStyle: CSSProperties = {
   display: "flex",
-  gap: 10,
-  flexWrap: "wrap",
-  marginBottom: 20,
-} satisfies CSSProperties;
+  alignItems: "center",
+  justifyContent: "center",
+  minHeight: 430,
+  padding: 24,
+  background:
+    "linear-gradient(135deg, #1b1c20 0%, #1b1c20 55%, rgba(27,28,32,0.86) 100%)",
+};
 
-const secondaryLinkStyle = {
-  display: "inline-block",
-  padding: "6px 10px",
-  border: "1px solid var(--st-border)",
-  borderRadius: 6,
-  color: "var(--st-text)",
-  background: "var(--st-card-soft)",
-  textDecoration: "none",
+const logoStyle: CSSProperties = {
+  width: 180,
+  maxWidth: "100%",
+  objectFit: "contain",
+};
+
+const contentStyle: CSSProperties = {
+  padding: 26,
+  display: "grid",
+  gap: 18,
+};
+
+const titleStyle: CSSProperties = {
+  margin: 0,
+  fontSize: 26,
+  lineHeight: 1.1,
+};
+
+const introStyle: CSSProperties = {
+  margin: "9px 0 0",
+  color: "var(--st-text-muted)",
   fontSize: 14,
-} satisfies CSSProperties;
+  lineHeight: 1.45,
+};
 
-const buttonRowStyle = {
-  display: "flex",
-  justifyContent: "flex-end",
-} satisfies CSSProperties;
+const choiceGridStyle: CSSProperties = {
+  display: "grid",
+  gap: 10,
+};
 
-const primaryButtonStyle = {
-  padding: "8px 14px",
+const choiceBaseStyle: CSSProperties = {
+  width: "100%",
+  display: "grid",
+  gridTemplateColumns: "24px 1fr",
+  alignItems: "center",
+  gap: 12,
+  padding: "13px 14px",
+  borderRadius: 12,
+  textAlign: "left",
+  cursor: "pointer",
+};
+
+const primaryChoiceStyle: CSSProperties = {
+  ...choiceBaseStyle,
   border: "1px solid var(--st-primary)",
-  borderRadius: 6,
   background: "var(--st-primary)",
   color: "var(--st-primary-text)",
+};
+
+const choiceStyle: CSSProperties = {
+  ...choiceBaseStyle,
+  border: "1px solid var(--st-border-soft)",
+  background: "var(--st-card)",
+  color: "var(--st-text)",
+};
+
+const privacyStyle: CSSProperties = {
+  margin: 0,
+  padding: "10px 12px",
+  borderRadius: 10,
+  background: "var(--st-card-soft)",
+  color: "var(--st-text-muted)",
+  fontSize: 12,
+  lineHeight: 1.4,
+};
+
+const footerStyle: CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  gap: 14,
+  alignItems: "flex-end",
+};
+
+const languageLabelStyle: CSSProperties = {
+  display: "grid",
+  gap: 5,
+  fontSize: 12,
   fontWeight: 700,
-  cursor: "pointer",
-} satisfies CSSProperties;
+};
+
+const selectStyle: CSSProperties = {
+  height: 32,
+  borderRadius: 8,
+  border: "1px solid var(--st-border-soft)",
+  background: "var(--st-card)",
+  color: "var(--st-text)",
+};
+
+const linkGroupStyle: CSSProperties = {
+  display: "flex",
+  gap: 8,
+  flexWrap: "wrap",
+  justifyContent: "flex-end",
+};
+
+const linkStyle: CSSProperties = {
+  minHeight: 32,
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  padding: "0 10px",
+  borderRadius: 8,
+  border: "1px solid var(--st-border-soft)",
+  background: "var(--st-card)",
+  color: "var(--st-text)",
+  textDecoration: "none",
+  fontSize: 12,
+  fontWeight: 700,
+};

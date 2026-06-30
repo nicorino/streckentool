@@ -22,6 +22,7 @@ const translations = {
     tutorialNext: "Next",
     tutorialFinish: "Finish",
     tutorialSkip: "Skip",
+    tutorialClickTarget: "Click the highlighted item or use Next.",
     tutorialCourseTitle: "Open the course tools",
     tutorialCourseBody:
       "Start in the Course tab. This is where you add the course area, text, images, arrows, and measurements.",
@@ -69,6 +70,9 @@ const translations = {
     redo: "Redo",
 
     newProjectShort: "New",
+    loadExampleCourse: "Load example",
+    loadExampleConfirm:
+      "This will replace the current project with an example course. Continue?",
     save: "Save",
     load: "Load",
 
@@ -151,6 +155,12 @@ const translations = {
       "Your course data stays in your browser unless you export or save a project file yourself.",
     welcomeLanguageLabel: "Choose language",
     welcomeStart: "Start planning",
+    welcomeStartEmptyTitle: "Start empty project",
+    welcomeStartEmptyBody: "Open a blank planning canvas.",
+    welcomeExampleTitle: "Load example course",
+    welcomeExampleBody: "See a complete starter course immediately.",
+    welcomeTutorialTitle: "Start guided tutorial",
+    welcomeTutorialBody: "Walk through the most important controls step by step.",
     welcomeWikiText: "Open wiki",
     welcomeSupportText: "Support the project",
 
@@ -282,6 +292,7 @@ const translations = {
     tutorialNext: "Weiter",
     tutorialFinish: "Fertig",
     tutorialSkip: "Überspringen",
+    tutorialClickTarget: "Klicke auf das hervorgehobene Element oder nutze Weiter.",
     tutorialCourseTitle: "Strecken-Werkzeuge öffnen",
     tutorialCourseBody:
       "Beginne im Reiter Strecke. Dort fügst du Streckenbereiche, Text, Bilder, Pfeile und Messungen hinzu.",
@@ -329,6 +340,9 @@ const translations = {
     redo: "Wiederholen",
 
     newProjectShort: "Neu",
+    loadExampleCourse: "Beispiel laden",
+    loadExampleConfirm:
+      "Das aktuelle Projekt wird durch eine Beispielstrecke ersetzt. Fortfahren?",
     save: "Speichern",
     load: "Laden",
 
@@ -412,6 +426,12 @@ const translations = {
       "Deine Streckendaten bleiben im Browser, solange du sie nicht selbst exportierst oder als Projektdatei speicherst.",
     welcomeLanguageLabel: "Sprache auswählen",
     welcomeStart: "Planung starten",
+    welcomeStartEmptyTitle: "Leeres Projekt starten",
+    welcomeStartEmptyBody: "Öffnet eine leere Planungsfläche.",
+    welcomeExampleTitle: "Beispielstrecke laden",
+    welcomeExampleBody: "Zeigt sofort eine fertige kleine Beispielstrecke.",
+    welcomeTutorialTitle: "Geführtes Tutorial starten",
+    welcomeTutorialBody: "Führt Schritt für Schritt durch die wichtigsten Funktionen.",
     welcomeWikiText: "Wiki öffnen",
     welcomeSupportText: "Projekt unterstützen",
 

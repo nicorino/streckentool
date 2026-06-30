@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent, type ReactNode } from "react";
+import { useEffect, useState, type ChangeEvent, type ReactNode } from "react";
 import {
   ArrowRight,
   BookOpen,
@@ -24,6 +24,7 @@ import {
   RotateCcw,
   Ruler,
   Save,
+  Sparkles,
   Square,
   Trash2,
   Type,
@@ -65,6 +66,7 @@ type TopToolbarProps = {
   hasMeasurements: boolean;
 
   onNewProject: () => void;
+  onLoadExampleProject: () => void;
   onSaveProject: () => void;
   onLoadProjectFile: (file: File) => void;
   onExportPng: (options: ExportPngOptions) => void;
@@ -111,6 +113,7 @@ export function TopToolbar({
   onClearMeasurements,
   hasMeasurements,
   onNewProject,
+  onLoadExampleProject,
   onSaveProject,
   onLoadProjectFile,
   onExportPng,
@@ -135,6 +138,33 @@ export function TopToolbar({
   const { theme, setTheme } = useAppTheme();
   const [activePreset, setActivePreset] = useState<ToolbarPreset>("plan");
   const [showExportDialog, setShowExportDialog] = useState(false);
+
+  useEffect(() => {
+    function handleTutorialPreset(event: Event) {
+      const customEvent = event as CustomEvent<ToolbarPreset>;
+
+      if (
+        customEvent.detail === "plan" ||
+        customEvent.detail === "background" ||
+        customEvent.detail === "export" ||
+        customEvent.detail === "project"
+      ) {
+        setActivePreset(customEvent.detail);
+      }
+    }
+
+    window.addEventListener(
+      "streckentool-tutorial-preset",
+      handleTutorialPreset
+    );
+
+    return () => {
+      window.removeEventListener(
+        "streckentool-tutorial-preset",
+        handleTutorialPreset
+      );
+    };
+  }, []);
 
   function handleLoadFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -489,6 +519,14 @@ export function TopToolbar({
                 title={t("newProjectShort")}
               >
                 {t("newProjectShort")}
+              </IconToolbarButton>
+
+              <IconToolbarButton
+                icon={Sparkles}
+                onClick={onLoadExampleProject}
+                title={t("loadExampleCourse")}
+              >
+                {t("loadExampleCourse")}
               </IconToolbarButton>
 
               <IconToolbarButton icon={Save} onClick={onSaveProject} title={t("saveProjectFile")}>

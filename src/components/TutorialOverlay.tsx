@@ -7,8 +7,11 @@ import {
 } from "lucide-react";
 import { type TranslationKey, useAppLanguage } from "../i18n/i18n";
 
+type TutorialPreset = "plan" | "background" | "export" | "project";
+
 type TutorialStep = {
   target: string;
+  preset?: TutorialPreset;
   titleKey: TranslationKey;
   bodyKey: TranslationKey;
 };
@@ -23,31 +26,37 @@ type TargetBox = {
 const TUTORIAL_STEPS: TutorialStep[] = [
   {
     target: "tutorial-course-tab",
+    preset: "plan",
     titleKey: "tutorialCourseTitle",
     bodyKey: "tutorialCourseBody",
   },
   {
     target: "tutorial-course-area-button",
+    preset: "plan",
     titleKey: "tutorialCourseAreaTitle",
     bodyKey: "tutorialCourseAreaBody",
   },
   {
     target: "tutorial-slalom-card",
+    preset: "plan",
     titleKey: "tutorialFigureTitle",
     bodyKey: "tutorialFigureBody",
   },
   {
     target: "tutorial-canvas",
+    preset: "plan",
     titleKey: "tutorialCanvasTitle",
     bodyKey: "tutorialCanvasBody",
   },
   {
     target: "tutorial-export-tab",
+    preset: "export",
     titleKey: "tutorialExportTitle",
     bodyKey: "tutorialExportBody",
   },
   {
     target: "tutorial-export-settings-button",
+    preset: "export",
     titleKey: "tutorialExportSettingsTitle",
     bodyKey: "tutorialExportSettingsBody",
   },
@@ -65,6 +74,18 @@ export function TutorialOverlay({ onClose }: TutorialOverlayProps) {
   const currentStep = TUTORIAL_STEPS[stepIndex];
   const isFirstStep = stepIndex === 0;
   const isLastStep = stepIndex === TUTORIAL_STEPS.length - 1;
+
+  useEffect(() => {
+    if (!currentStep.preset) {
+      return;
+    }
+
+    window.dispatchEvent(
+      new CustomEvent<TutorialPreset>("streckentool-tutorial-preset", {
+        detail: currentStep.preset,
+      })
+    );
+  }, [currentStep.preset]);
 
   useEffect(() => {
     function updateTargetBox() {
@@ -93,7 +114,7 @@ export function TutorialOverlay({ onClose }: TutorialOverlayProps) {
       });
     }
 
-    const timeout = window.setTimeout(updateTargetBox, 90);
+    const timeout = window.setTimeout(updateTargetBox, 160);
 
     window.addEventListener("resize", updateTargetBox);
     window.addEventListener("scroll", updateTargetBox, true);
@@ -102,6 +123,40 @@ export function TutorialOverlay({ onClose }: TutorialOverlayProps) {
       window.clearTimeout(timeout);
       window.removeEventListener("resize", updateTargetBox);
       window.removeEventListener("scroll", updateTargetBox, true);
+    };
+  }, [currentStep.target, currentStep.preset, stepIndex]);
+
+  useEffect(() => {
+    function handleDocumentClick(event: MouseEvent) {
+      const target = event.target as HTMLElement | null;
+
+      if (!target) {
+        return;
+      }
+
+      if (target.closest("[data-tutorial-control='true']")) {
+        return;
+      }
+
+      const clickedTutorialTarget = target.closest<HTMLElement>(
+        `[data-tutorial-target="${currentStep.target}"]`
+      );
+
+      if (!clickedTutorialTarget) {
+        return;
+      }
+
+      window.setTimeout(() => {
+        setStepIndex((current) =>
+          Math.min(TUTORIAL_STEPS.length - 1, current + 1)
+        );
+      }, 220);
+    }
+
+    document.addEventListener("click", handleDocumentClick, true);
+
+    return () => {
+      document.removeEventListener("click", handleDocumentClick, true);
     };
   }, [currentStep.target]);
 
@@ -136,9 +191,9 @@ export function TutorialOverlay({ onClose }: TutorialOverlayProps) {
     }
 
     const preferredTop =
-      targetBox.top + targetBox.height + 22 < window.innerHeight - 230
+      targetBox.top + targetBox.height + 22 < window.innerHeight - 250
         ? targetBox.top + targetBox.height + 22
-        : Math.max(20, targetBox.top - 230);
+        : Math.max(20, targetBox.top - 250);
 
     return {
       top: preferredTop,
@@ -163,7 +218,10 @@ export function TutorialOverlay({ onClose }: TutorialOverlayProps) {
     <div style={overlayRootStyle}>
       <div style={highlightStyle} />
 
-      <section style={{ ...calloutStyle, ...calloutPosition }}>
+      <section
+        style={{ ...calloutStyle, ...calloutPosition }}
+        data-tutorial-control="true"
+      >
         <div style={pointerStyle} />
 
         <header style={calloutHeaderStyle}>
@@ -183,6 +241,7 @@ export function TutorialOverlay({ onClose }: TutorialOverlayProps) {
         </header>
 
         <p style={bodyStyle}>{t(currentStep.bodyKey)}</p>
+        <p style={actionHintStyle}>{t("tutorialClickTarget")}</p>
 
         <footer style={footerStyle}>
           <button
@@ -284,10 +343,17 @@ const titleStyle: CSSProperties = {
 };
 
 const bodyStyle: CSSProperties = {
-  margin: "12px 0 16px",
+  margin: "12px 0 8px",
   color: "var(--st-text)",
   fontSize: 14,
   lineHeight: 1.45,
+};
+
+const actionHintStyle: CSSProperties = {
+  margin: "0 0 16px",
+  color: "var(--st-text-muted)",
+  fontSize: 12,
+  lineHeight: 1.35,
 };
 
 const closeButtonStyle: CSSProperties = {

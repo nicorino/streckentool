@@ -36,6 +36,7 @@ import {
   parseStreckentoolProject,
   type EditorState,
 } from "../projects/StreckentoolProject";
+import { createExampleEditorState } from "../projects/createExampleEditorState";
 import { useUndoRedo } from "../state/useUndoRedo";
 import { FIGURE_TEMPLATES } from "../figures/figureTemplates";
 import {
@@ -485,6 +486,38 @@ export function EditorPage() {
     }));
   }
 
+  function loadExampleProject() {
+    if (hasUnsavedChanges && !window.confirm(t("loadExampleConfirm"))) {
+      return;
+    }
+
+    const nextState = createExampleEditorState();
+
+    editorHistory.reset(nextState);
+    setLastCleanProjectJson(JSON.stringify(createStreckentoolProject(nextState)));
+
+    setSelection(null);
+    setPrintPreview(false);
+    setShowHelperLines(true);
+    setSnapToGrid(true);
+    setExportFormat("a4-landscape");
+
+    setActiveTool("select");
+    setPendingFigureTemplateId(null);
+    setPendingArrowKind(null);
+    setPendingMeasurementStart(null);
+    setPendingCalibrationStart(null);
+    setCalibrationDraft(null);
+
+    setZoom(1);
+    setViewPosition({
+      x: 260,
+      y: 190,
+    });
+
+    setShowNewProjectDialog(false);
+  }
+
   function openNewProjectDialog() {
     setShowNewProjectDialog(true);
   }
@@ -922,6 +955,36 @@ export function EditorPage() {
   }
 
   useEffect(() => {
+    function handleWelcomeLoadExample() {
+      loadExampleProject();
+    }
+
+    function handleWelcomeStartTutorial() {
+      setShowTutorialOverlay(true);
+    }
+
+    window.addEventListener(
+      "streckentool-welcome-load-example",
+      handleWelcomeLoadExample
+    );
+    window.addEventListener(
+      "streckentool-welcome-start-tutorial",
+      handleWelcomeStartTutorial
+    );
+
+    return () => {
+      window.removeEventListener(
+        "streckentool-welcome-load-example",
+        handleWelcomeLoadExample
+      );
+      window.removeEventListener(
+        "streckentool-welcome-start-tutorial",
+        handleWelcomeStartTutorial
+      );
+    };
+  }, [editorHistory, hasUnsavedChanges]);
+
+  useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       const target = event.target as HTMLElement | null;
 
@@ -999,6 +1062,7 @@ export function EditorPage() {
         onClearMeasurements={clearMeasurements}
         hasMeasurements={measurements.length > 0}
         onNewProject={openNewProjectDialog}
+        onLoadExampleProject={loadExampleProject}
         onSaveProject={saveProject}
         onLoadProjectFile={loadProjectFile}
         onImportCreatorJson={handleImportCreatorJson}
