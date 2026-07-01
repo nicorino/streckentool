@@ -16,6 +16,9 @@ export const CONFIGURABLE_SLALOM_TEMPLATE_ID = "configurable-slalom";
 export const CONFIGURABLE_WECHSELTOR_TEMPLATE_ID = "configurable-wechseltor";
 export const CONFIGURABLE_KREISEL_TEMPLATE_ID = "configurable-kreisel";
 export const CONFIGURABLE_S_SPURGASSE_TEMPLATE_ID = "configurable-s-spurgasse";
+export const CONFIGURABLE_Z_GASSE_TEMPLATE_ID = "configurable-z-gasse";
+export const CONFIGURABLE_SPURGASSE_GERADE_TEMPLATE_ID = "configurable-spurgasse-gerade";
+export const CONFIGURABLE_GASSE_TEMPLATE_ID = "configurable-gasse";
 
 const CONE_RADIUS = 0.25;
 
@@ -49,6 +52,31 @@ const MIN_S_SPURGASSE_LENGTH_METERS = 3;
 const MAX_S_SPURGASSE_LENGTH_METERS = 30;
 const MIN_S_SPURGASSE_CURVE_AMOUNT = 0;
 const MAX_S_SPURGASSE_CURVE_AMOUNT = 6;
+
+const Z_GASSE_LANE_WIDTH = 1.65;
+const Z_GASSE_CONE_CLEAR_SPACE = 0.5;
+const Z_GASSE_CONE_CENTER_SPACING = Z_GASSE_CONE_CLEAR_SPACE + CONE_RADIUS * 2;
+const Z_GASSE_CONES_PER_ROW = 5;
+const DEFAULT_Z_GASSE_GATE_GAP_METERS = 2.5;
+const MIN_Z_GASSE_GATE_GAP_METERS = 2;
+const MAX_Z_GASSE_GATE_GAP_METERS = 4;
+const DEFAULT_Z_GASSE_MIDDLE_GATE_OFFSET_CONES = 0;
+const MIN_Z_GASSE_MIDDLE_GATE_OFFSET_CONES = -1;
+const MAX_Z_GASSE_MIDDLE_GATE_OFFSET_CONES = 1;
+
+const SPURGASSE_GERADE_LANE_WIDTH = 1.65;
+const SPURGASSE_GERADE_CONE_CLEAR_SPACE = 0.5;
+const SPURGASSE_GERADE_CONE_CENTER_SPACING =
+  SPURGASSE_GERADE_CONE_CLEAR_SPACE + CONE_RADIUS * 2;
+const DEFAULT_SPURGASSE_GERADE_LENGTH_METERS = 8;
+const MIN_SPURGASSE_GERADE_LENGTH_METERS = 1;
+const MAX_SPURGASSE_GERADE_LENGTH_METERS = 30;
+
+const GASSE_LANE_WIDTH = 1.65;
+const GASSE_CONE_CENTER_SPACING = CONE_RADIUS * 2;
+const DEFAULT_GASSE_CONE_COUNT = 3;
+const MIN_GASSE_CONE_COUNT = 3;
+const MAX_GASSE_CONE_COUNT = 5;
 
 const CONFIGURABLE_SLALOM_TEMPLATE: FigureTemplate = {
   id: CONFIGURABLE_SLALOM_TEMPLATE_ID,
@@ -88,10 +116,45 @@ const CONFIGURABLE_S_SPURGASSE_TEMPLATE: FigureTemplate = {
   id: CONFIGURABLE_S_SPURGASSE_TEMPLATE_ID,
   name: "S-Spurgasse",
   shortName: "S-Spurgasse",
-  category: "Slalom",
+  category: "Gates",
   description:
     "S-förmige Spurgasse mit 1,65 m Abstand zwischen den Reihen und 50 cm Abstand zwischen Pylonen.",
   elements: createBaseSSpurgasseElements(DEFAULT_S_SPURGASSE_CURVE_AMOUNT, DEFAULT_S_SPURGASSE_LENGTH_METERS),
+};
+
+const CONFIGURABLE_Z_GASSE_TEMPLATE: FigureTemplate = {
+  id: CONFIGURABLE_Z_GASSE_TEMPLATE_ID,
+  name: "Z-Gasse",
+  shortName: "Z-Gasse",
+  category: "Gates",
+  description:
+    "Drei lange Gassen mit 1,65 m Breite, 50 cm Pylonenabstand und 2-4 m Abstand zwischen den Gassen.",
+  elements: createBaseZGasseElements(
+    DEFAULT_Z_GASSE_GATE_GAP_METERS,
+    DEFAULT_Z_GASSE_MIDDLE_GATE_OFFSET_CONES
+  ),
+};
+
+const CONFIGURABLE_SPURGASSE_GERADE_TEMPLATE: FigureTemplate = {
+  id: CONFIGURABLE_SPURGASSE_GERADE_TEMPLATE_ID,
+  name: "Spurgasse gerade",
+  shortName: "Spurgasse gerade",
+  category: "Gates",
+  description:
+    "Gerade Spurgasse mit 1,65 m Breite und einstellbarer Länge.",
+  elements: createBaseSpurgasseGeradeElements(
+    DEFAULT_SPURGASSE_GERADE_LENGTH_METERS
+  ),
+};
+
+const CONFIGURABLE_GASSE_TEMPLATE: FigureTemplate = {
+  id: CONFIGURABLE_GASSE_TEMPLATE_ID,
+  name: "Gasse",
+  shortName: "Gasse",
+  category: "Gates",
+  description:
+    "Kurze Gasse mit 1,65 m Breite und 3-5 Pylonen pro Seite.",
+  elements: createBaseGasseElements(DEFAULT_GASSE_CONE_COUNT),
 };
 
 export function withConfigurableFigureTemplates(
@@ -102,7 +165,10 @@ export function withConfigurableFigureTemplates(
       template.id !== CONFIGURABLE_SLALOM_TEMPLATE_ID &&
       template.id !== CONFIGURABLE_WECHSELTOR_TEMPLATE_ID &&
       template.id !== CONFIGURABLE_KREISEL_TEMPLATE_ID &&
-      template.id !== CONFIGURABLE_S_SPURGASSE_TEMPLATE_ID
+      template.id !== CONFIGURABLE_S_SPURGASSE_TEMPLATE_ID &&
+      template.id !== CONFIGURABLE_Z_GASSE_TEMPLATE_ID &&
+      template.id !== CONFIGURABLE_SPURGASSE_GERADE_TEMPLATE_ID &&
+      template.id !== CONFIGURABLE_GASSE_TEMPLATE_ID
   );
 
   return [
@@ -110,6 +176,9 @@ export function withConfigurableFigureTemplates(
     CONFIGURABLE_WECHSELTOR_TEMPLATE,
     CONFIGURABLE_KREISEL_TEMPLATE,
     CONFIGURABLE_S_SPURGASSE_TEMPLATE,
+    CONFIGURABLE_Z_GASSE_TEMPLATE,
+    CONFIGURABLE_SPURGASSE_GERADE_TEMPLATE,
+    CONFIGURABLE_GASSE_TEMPLATE,
     ...withoutDuplicateConfigurable,
   ];
 }
@@ -125,10 +194,15 @@ export function getLibraryFigureTemplates(
       template.id === CONFIGURABLE_WECHSELTOR_TEMPLATE_ID ||
       template.id === CONFIGURABLE_KREISEL_TEMPLATE_ID ||
       template.id === CONFIGURABLE_S_SPURGASSE_TEMPLATE_ID ||
+      template.id === CONFIGURABLE_Z_GASSE_TEMPLATE_ID ||
+      template.id === CONFIGURABLE_SPURGASSE_GERADE_TEMPLATE_ID ||
+      template.id === CONFIGURABLE_GASSE_TEMPLATE_ID ||
       (!isGenericSlalomVariant(template) &&
         !isGenericWechseltorVariant(template) &&
         !isGenericKreiselVariant(template) &&
-        !isGenericSSpurgasseVariant(template))
+        !isGenericSSpurgasseVariant(template) &&
+        !isGenericZGasseVariant(template) &&
+        !isGenericSpurgasseGeradeVariant(template))
   );
 }
 
@@ -152,6 +226,18 @@ export function isGenericSSpurgasseVariant(template: FigureTemplate) {
   const text = `${template.id} ${template.name} ${template.shortName ?? ""}`;
 
   return /s[-\s]?spurgasse/i.test(text);
+}
+
+export function isGenericZGasseVariant(template: FigureTemplate) {
+  const text = `${template.id} ${template.name} ${template.shortName ?? ""}`;
+
+  return /z[-\s]?gasse/i.test(text);
+}
+
+export function isGenericSpurgasseGeradeVariant(template: FigureTemplate) {
+  const text = `${template.id} ${template.name} ${template.shortName ?? ""}`;
+
+  return /spurgasse\s+gerade/i.test(text);
 }
 
 export function isConfigurableSlalomTemplate(template: FigureTemplate) {
@@ -180,6 +266,26 @@ export function isConfigurableSSpurgasseTemplate(template: FigureTemplate) {
     template.id === CONFIGURABLE_S_SPURGASSE_TEMPLATE_ID ||
     isGenericSSpurgasseVariant(template)
   );
+}
+
+export function isConfigurableZGasseTemplate(template: FigureTemplate) {
+  return (
+    template.id === CONFIGURABLE_Z_GASSE_TEMPLATE_ID ||
+    isGenericZGasseVariant(template)
+  );
+}
+
+export function isConfigurableSpurgasseGeradeTemplate(
+  template: FigureTemplate
+) {
+  return (
+    template.id === CONFIGURABLE_SPURGASSE_GERADE_TEMPLATE_ID ||
+    isGenericSpurgasseGeradeVariant(template)
+  );
+}
+
+export function isConfigurableGasseTemplate(template: FigureTemplate) {
+  return template.id === CONFIGURABLE_GASSE_TEMPLATE_ID;
 }
 
 /**
@@ -216,6 +322,25 @@ export function createDefaultFigureConfig(
     return {
       sSpurgasseCurveAmount: DEFAULT_S_SPURGASSE_CURVE_AMOUNT,
       sSpurgasseLengthMeters: DEFAULT_S_SPURGASSE_LENGTH_METERS,
+    };
+  }
+
+  if (isConfigurableZGasseTemplate(template)) {
+    return {
+      zGasseGateGapMeters: DEFAULT_Z_GASSE_GATE_GAP_METERS,
+      zGasseMiddleGateOffsetCones: DEFAULT_Z_GASSE_MIDDLE_GATE_OFFSET_CONES,
+    };
+  }
+
+  if (isConfigurableSpurgasseGeradeTemplate(template)) {
+    return {
+      spurgasseGeradeLengthMeters: DEFAULT_SPURGASSE_GERADE_LENGTH_METERS,
+    };
+  }
+
+  if (isConfigurableGasseTemplate(template)) {
+    return {
+      gasseConeCount: DEFAULT_GASSE_CONE_COUNT,
     };
   }
 
@@ -282,6 +407,43 @@ export function normalizeFigureConfig(
     };
   }
 
+  if (isConfigurableZGasseTemplate(template)) {
+    return {
+      zGasseGateGapMeters: clampNumber(
+        config?.zGasseGateGapMeters ?? DEFAULT_Z_GASSE_GATE_GAP_METERS,
+        MIN_Z_GASSE_GATE_GAP_METERS,
+        MAX_Z_GASSE_GATE_GAP_METERS
+      ),
+      zGasseMiddleGateOffsetCones: clampInt(
+        config?.zGasseMiddleGateOffsetCones ??
+          DEFAULT_Z_GASSE_MIDDLE_GATE_OFFSET_CONES,
+        MIN_Z_GASSE_MIDDLE_GATE_OFFSET_CONES,
+        MAX_Z_GASSE_MIDDLE_GATE_OFFSET_CONES
+      ),
+    };
+  }
+
+  if (isConfigurableSpurgasseGeradeTemplate(template)) {
+    return {
+      spurgasseGeradeLengthMeters: clampNumber(
+        config?.spurgasseGeradeLengthMeters ??
+          DEFAULT_SPURGASSE_GERADE_LENGTH_METERS,
+        MIN_SPURGASSE_GERADE_LENGTH_METERS,
+        MAX_SPURGASSE_GERADE_LENGTH_METERS
+      ),
+    };
+  }
+
+  if (isConfigurableGasseTemplate(template)) {
+    return {
+      gasseConeCount: clampInt(
+        config?.gasseConeCount ?? DEFAULT_GASSE_CONE_COUNT,
+        MIN_GASSE_CONE_COUNT,
+        MAX_GASSE_CONE_COUNT
+      ),
+    };
+  }
+
   return {};
 }
 
@@ -319,6 +481,25 @@ export function getResolvedFigureElements(
       config.sSpurgasseCurveAmount ?? DEFAULT_S_SPURGASSE_CURVE_AMOUNT,
       config.sSpurgasseLengthMeters ?? DEFAULT_S_SPURGASSE_LENGTH_METERS
     );
+  }
+
+  if (isConfigurableZGasseTemplate(template)) {
+    return createBaseZGasseElements(
+      config.zGasseGateGapMeters ?? DEFAULT_Z_GASSE_GATE_GAP_METERS,
+      config.zGasseMiddleGateOffsetCones ??
+        DEFAULT_Z_GASSE_MIDDLE_GATE_OFFSET_CONES
+    );
+  }
+
+  if (isConfigurableSpurgasseGeradeTemplate(template)) {
+    return createBaseSpurgasseGeradeElements(
+      config.spurgasseGeradeLengthMeters ??
+        DEFAULT_SPURGASSE_GERADE_LENGTH_METERS
+    );
+  }
+
+  if (isConfigurableGasseTemplate(template)) {
+    return createBaseGasseElements(config.gasseConeCount ?? DEFAULT_GASSE_CONE_COUNT);
   }
 
   return template.elements;
@@ -560,6 +741,96 @@ function createBaseSSpurgasseElements(curveAmountMeters: number, lengthMetersInp
     ...samplePolylineCones(upperCurve, S_SPURGASSE_CONE_CENTER_SPACING),
     ...samplePolylineCones(lowerCurve, S_SPURGASSE_CONE_CENTER_SPACING),
   ];
+}
+
+function createBaseZGasseElements(
+  gateGapMeters: number,
+  middleGateOffsetCones: number
+): FigureElement[] {
+  const gateGap = clampNumber(
+    gateGapMeters,
+    MIN_Z_GASSE_GATE_GAP_METERS,
+    MAX_Z_GASSE_GATE_GAP_METERS
+  );
+  const middleOffset = clampInt(
+    middleGateOffsetCones,
+    MIN_Z_GASSE_MIDDLE_GATE_OFFSET_CONES,
+    MAX_Z_GASSE_MIDDLE_GATE_OFFSET_CONES
+  );
+
+  const centerDistance = Z_GASSE_LANE_WIDTH + gateGap;
+  const gateCenters = [-centerDistance, 0, centerDistance];
+  const rowHalfWidth = Z_GASSE_LANE_WIDTH / 2;
+  const firstConeY =
+    -((Z_GASSE_CONES_PER_ROW - 1) * Z_GASSE_CONE_CENTER_SPACING) / 2;
+
+  return gateCenters.flatMap((gateCenterX, gateIndex) => {
+    const gateOffsetY =
+      gateIndex === 1 ? middleOffset * Z_GASSE_CONE_CENTER_SPACING : 0;
+
+    return Array.from({ length: Z_GASSE_CONES_PER_ROW }, (_value, coneIndex) => {
+      const y =
+        firstConeY + coneIndex * Z_GASSE_CONE_CENTER_SPACING + gateOffsetY;
+
+      return [
+        {
+          type: "cone" as const,
+          x: gateCenterX - rowHalfWidth,
+          y,
+          radius: CONE_RADIUS,
+        },
+        {
+          type: "cone" as const,
+          x: gateCenterX + rowHalfWidth,
+          y,
+          radius: CONE_RADIUS,
+        },
+      ];
+    }).flat();
+  });
+}
+
+function createBaseSpurgasseGeradeElements(lengthMetersInput: number): FigureElement[] {
+  const lengthMeters = clampNumber(
+    lengthMetersInput,
+    MIN_SPURGASSE_GERADE_LENGTH_METERS,
+    MAX_SPURGASSE_GERADE_LENGTH_METERS
+  );
+  const coneCount = Math.max(
+    2,
+    Math.floor(lengthMeters / SPURGASSE_GERADE_CONE_CENTER_SPACING) + 1
+  );
+  const actualLength = (coneCount - 1) * SPURGASSE_GERADE_CONE_CENTER_SPACING;
+  const startX = -actualLength / 2;
+  const halfWidth = SPURGASSE_GERADE_LANE_WIDTH / 2;
+
+  return Array.from({ length: coneCount }, (_value, index) => {
+    const x = startX + index * SPURGASSE_GERADE_CONE_CENTER_SPACING;
+
+    return [
+      { type: "cone" as const, x, y: -halfWidth, radius: CONE_RADIUS },
+      { type: "cone" as const, x, y: halfWidth, radius: CONE_RADIUS },
+    ];
+  }).flat();
+}
+
+function createBaseGasseElements(coneCountInput: number): FigureElement[] {
+  const coneCount = clampInt(
+    coneCountInput,
+    MIN_GASSE_CONE_COUNT,
+    MAX_GASSE_CONE_COUNT
+  );
+  const halfWidth = GASSE_LANE_WIDTH / 2;
+  const startY = -((coneCount - 1) * GASSE_CONE_CENTER_SPACING) / 2;
+
+  return Array.from({ length: coneCount }, (_value, index) => {
+    const y = startY + index * GASSE_CONE_CENTER_SPACING;
+
+    return [
+      { type: "cone" as const, x: -halfWidth, y, radius: CONE_RADIUS },
+      { type: "cone" as const, x: halfWidth, y, radius: CONE_RADIUS },
+    ];
+  }).flat();
 }
 
 function samplePolylineCones(

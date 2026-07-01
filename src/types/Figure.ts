@@ -36,6 +36,10 @@ export type FigureConfig = {
   kreiselEntryExitConeCount?: number;
   sSpurgasseCurveAmount?: number;
   sSpurgasseLengthMeters?: number;
+  zGasseGateGapMeters?: number;
+  zGasseMiddleGateOffsetCones?: number;
+  spurgasseGeradeLengthMeters?: number;
+  gasseConeCount?: number;
 };
 
 export type FigureTemplate = {

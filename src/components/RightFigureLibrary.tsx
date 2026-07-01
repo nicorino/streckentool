@@ -113,14 +113,15 @@ export function RightFigureLibrary({
             <div style={cardGridStyle}>
               {group.templates.map((template) => {
                 const isSelected = selectedTemplateId === template.id;
-                const isConfigurable = template.id === "configurable-slalom";
+                const isSlalomConfigurable = template.id === "configurable-slalom";
+                const isConfigurable = template.id.startsWith("configurable-");
 
                 return (
                   <button
                     key={template.id}
                     type="button"
                     data-tutorial-target={
-                      isConfigurable ? "tutorial-slalom-card" : undefined
+                      isSlalomConfigurable ? "tutorial-slalom-card" : undefined
                     }
                     onClick={() => handleSelectTemplate?.(template.id)}
                     style={getCardStyle(isSelected)}
@@ -186,30 +187,6 @@ function FigurePreview({ template }: { template: FigureTemplate }) {
           element.orientation === "up" ||
           element.orientation === "down"
         ) {
-          const direction = element.orientation === "right" ? 1 : -1;
-          const radius = Math.max(0.22, element.radius);
-          const tipX = element.x + direction * radius;
-          const baseX = element.x - direction * radius;
-          const topY = element.y - radius * 0.75;
-          const bottomY = element.y + radius * 0.75;
-
-          return (
-            <polygon
-              key={index}
-              points={`${tipX},${element.y} ${baseX},${topY} ${baseX},${bottomY}`}
-              fill="currentColor"
-            stroke="#111827"
-                strokeWidth={0.12}
-              />
-          );
-        }
-
-        if (
-          element.orientation === "left" ||
-          element.orientation === "right" ||
-          element.orientation === "up" ||
-          element.orientation === "down"
-        ) {
           const radius = Math.max(0.24, element.radius);
 
           if (element.orientation === "up" || element.orientation === "down") {
@@ -225,8 +202,8 @@ function FigurePreview({ template }: { template: FigureTemplate }) {
                 key={index}
                 points={`${tipX},${tipY} ${leftX},${baseY} ${rightX},${baseY}`}
                 fill="currentColor"
-              stroke="#111827"
-                strokeWidth={0.12}
+                stroke="#111827"
+                strokeWidth={0.14}
               />
             );
           }

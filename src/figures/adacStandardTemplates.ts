@@ -1,6 +1,6 @@
 import type { FigureElement, FigureTemplate } from "../types/Figure";
 
-const CONE_RADIUS = 0.18;
+const CONE_RADIUS = 0.25;
 
 const SLALOM_CONE_COUNTS = [3, 4, 5, 6];
 const SLALOM_DISTANCES_METERS = [4, 5, 6, 7, 8];
@@ -43,6 +43,20 @@ function row(y: number, xValues: number[]): FigureElement[] {
 function column(x: number, yValues: number[]): FigureElement[] {
   return yValues.map((y) => cone(x, y));
 }
+
+
+function coneRowByCount(
+  y: number,
+  count: number,
+  spacing: number,
+  startX = -((count - 1) * spacing) / 2
+): FigureElement[] {
+  return Array.from({ length: count }, (_value, index) =>
+    cone(Number((startX + index * spacing).toFixed(2)), y)
+  );
+}
+
+
 
 function arcCones(
   centerX: number,
@@ -131,8 +145,21 @@ export const STANDARD_COURSE_TEMPLATES: FigureTemplate[] = [
     id: "pylonentor-2026",
     name: "Pylonentor",
     category: "Gates",
-    description: "Ein Pylonentor besteht aus zwei Pylonen.",
-    elements: [cone(0, -0.8), cone(0, 0.8), line(-1.2, 0, 1.2, 0)],
+    description: "Ein Pylonentor mit 1,65 m Breite.",
+    elements: [
+      {
+        type: "cone",
+        x: 0,
+        y: -0.825,
+        radius: 0.25,
+      },
+      {
+        type: "cone",
+        x: 0,
+        y: 0.825,
+        radius: 0.25,
+      },
+    ],
   },
   {
     id: "wechseltor-2026",
@@ -149,21 +176,6 @@ export const STANDARD_COURSE_TEMPLATES: FigureTemplate[] = [
     ],
   },
   {
-    id: "schweizer-slalom-2026",
-    name: "Schweizer Slalom",
-    category: "Other",
-    description:
-      "Mehrere einzelne Pylonen in einer Linie, wechselseitig zu durchfahren.",
-    elements: [
-      cone(-3.2, 0),
-      cone(-1.6, 0),
-      cone(0, 0),
-      cone(1.6, 0),
-      cone(3.2, 0),
-      line(-4, -0.8, 4, 0.8),
-    ],
-  },
-  {
     id: "wende-90-180-2026",
     name: "Wende 90-180 Grad",
     category: "Other",
@@ -176,23 +188,32 @@ export const STANDARD_COURSE_TEMPLATES: FigureTemplate[] = [
     name: "Ypsilon",
     category: "Other",
     description:
-      "Y-förmige Aufgabe. Praktischer Entwurf mit 0,5 m Pylonenabstand.",
+      "Y-förmige Aufgabe mit 1,65 m Fahrspurbreite und 50 cm Pylonenabstand.",
     elements: [
-      ...row(-0.8, [-5, -4.5, -4, -3.5]),
-      ...row(0.8, [-5, -4.5, -4, -3.5]),
-      cone(-3, -0.6),
-      cone(-2.5, -0.4),
-      cone(-2, -0.2),
-      cone(-1.5, 0),
-      cone(-2.5, 0.4),
-      cone(-2, 0.6),
-      cone(-1.5, 0.8),
-      ...row(-1.6, [-0.8, -0.3, 0.2, 0.7]),
-      ...row(0, [-0.8, -0.3, 0.2, 0.7]),
-      ...row(1.6, [-0.8, -0.3, 0.2, 0.7]),
-      line(-5.5, 0, -3.2, 0),
-      line(-1.2, 0.8, 1.2, 0.8),
-      line(-1.2, -0.8, 1.2, -0.8),
+      // Left entry: three cones per side.
+      ...row(-0.825, [-5, -4, -3]),
+      ...row(0.825, [-5, -4, -3]),
+
+      // Upper branch: five cones diagonally, then three straight.
+      cone(-2, -0.825),
+      cone(-1, -1.25),
+      cone(0, -1.7),
+      cone(1, -2.15),
+      cone(2, -2.6),
+      ...row(-2.6, [3, 4, 5]),
+
+      // Lower branch: five cones diagonally, then three straight.
+      cone(-2, 0.825),
+      cone(-1, 1.25),
+      cone(0, 1.7),
+      cone(1, 2.15),
+      cone(2, 2.6),
+      ...row(2.6, [3, 4, 5]),
+
+      // Middle guide section: six cones like a short spurgasse plus one closing cone.
+      ...row(-0.825, [3, 4, 5]),
+      ...row(0.825, [3, 4, 5]),
+      cone(2, 0),
     ],
   },
   {
@@ -317,55 +338,83 @@ export const STANDARD_COURSE_TEMPLATES: FigureTemplate[] = [
   },
   {
     id: "brezel-knoten-schwammerl-2026",
-    name: "Brezel / Knoten / Schwammerl",
+    name: "Brezel",
     category: "Other",
-    description: "Komplexe Schleifenaufgabe als praktische Grundvorlage.",
+    description:
+      "Brezel mit 1,65 m Fahrspurbreite und 50 cm Pylonenabstand.",
     elements: [
-      ...row(-3, [-4, -3.5, -3, -2.5, -2, -1.5, -1, -0.5, 0, 0.5]),
-      ...row(-1.2, [-4, -3.5, -3]),
-      cone(-2.4, -0.7),
-      ...column(-2, [0, 0.5, 1, 1.5]),
-      ...row(-1.2, [0.5, 1, 1.5]),
-      cone(0.2, -0.7),
-      ...column(0.6, [0, 0.5, 1, 1.5]),
-      line(-4.5, -2.4, 1, -2.4),
-      line(-3.5, -0.8, -2, 1.8),
-      line(1.4, -0.8, 0.4, 1.8),
+      // Top straight: 10 cones.
+      ...coneRowByCount(-3, 10, 1, -4.5),
+
+      // Left and right short rows: 3 cones each, 1.65 m below top row.
+      ...row(-1.35, [-4.5, -3.5, -2.5]),
+      ...row(-1.35, [2.5, 3.5, 4.5]),
+
+      // Upper transition pair: 2.5 m wide.
+      cone(-1.25, -0.75),
+      cone(1.25, -0.75),
+
+      // Lower vertical gate: 1.65 m wide, straight columns.
+      cone(-0.825, 0.25),
+      cone(-0.825, 1.25),
+      cone(-0.825, 2.25),
+
+      cone(0.825, 0.25),
+      cone(0.825, 1.25),
+      cone(0.825, 2.25),
+    ],
+  },
+  {
+    id: "deutsches-eck-gross-2026",
+    name: "Deutsches Eck - groß",
+    category: "Boxes",
+    description:
+      "Großes Deutsches Eck mit 1,65 m Fahrspurbreite und 50 cm Pylonenabstand.",
+    elements: [
+      ...row(-3, [-4, -3, -2, -1, 0, 1]),
+      ...column(-4, [-3, -2, -1, 0, 1, 2]),
+
+      ...row(-1.35, [-2.35, -1.35, -0.35]),
+      ...column(-2.35, [0, 1, 2]),
+    ],
+  },
+  {
+    id: "deutsches-eck-eckig-2026",
+    name: "Deutsches Eck - eckig",
+    category: "Boxes",
+    description:
+      "Eckige Deutsches-Eck-Variante mit 1,65 m Fahrspurbreite und 50 cm Pylonenabstand.",
+    elements: [
+      ...row(-2, [-1, 0, 1]),
+      ...column(-1, [-2, -1, 0]),
+      cone(1, 0),
     ],
   },
   {
     id: "deutsches-eck-2026",
     name: "Deutsches Eck",
     category: "Boxes",
-    description: "Deutsches Eck mit längerem Außenwinkel.",
+    description:
+      "Kompaktes Deutsches Eck mit 1,65 m Eckabstand und drei Pylonen im Bogen.",
     elements: [
-      ...row(-2, [-3, -2.5, -2, -1.5, -1, -0.5]),
-      ...column(-3, [-1.5, -1, -0.5, 0, 0.5]),
-      ...column(-1.2, [0, 0.5]),
-      ...row(0, [-0.7, -0.2, 0.3]),
-    ],
-  },
-  {
-    id: "normales-eck-2026",
-    name: "Normales Eck",
-    category: "Boxes",
-    description: "Normale Eck-Variante aus dem Deutschen-Eck-Beispiel.",
-    elements: [
-      ...row(-1.5, [-1, -0.5, 0]),
-      ...column(-1, [-1, -0.5, 0]),
-      cone(1, 0),
-      cone(1, -0.7),
-      cone(1.8, -0.7),
+      cone(0, 0),
+      cone(-1.65, 0),
+      cone(0, -1.65),
+
+      cone(-1.56, -0.61),
+      cone(-1.21, -1.21),
+      cone(-0.61, -1.56),
     ],
   },
   {
     id: "zielgasse-2026",
     name: "Zielgasse",
     category: "Gates",
-    description: "Zielgasse: Breite 2,5 m, Länge 8-10 m. Vorlage mit 8 m Länge.",
+    description:
+      "Zielgasse: 2,5 m breit und 8-10 m lang. Vorlage mit 9 m Länge, ohne Haltelinie.",
     elements: [
-      ...straightGateRow([-4, -2, 0, 2, 4], 1.25),
-      line(-4.5, 0, 4.5, 0),
+      ...coneRowByCount(-1.25, 10, 1),
+      ...coneRowByCount(1.25, 10, 1),
     ],
   },
   {
@@ -373,21 +422,21 @@ export const STANDARD_COURSE_TEMPLATES: FigureTemplate[] = [
     name: "Schikane",
     category: "Boxes",
     description:
-      "Schikane mit versetzter Durchfahrt und 0,5 m Pylonenabstand.",
+      "Schikane mit 1,65 m breiten Durchfahrten und 50 cm Pylonenabstand.",
     elements: [
-      ...row(-2, [-4, -3.5, -3, -2.5, -2, -1.5, -1, -0.5, 0]),
-      ...column(-4, [-1.5, -1, -0.5]),
-      ...row(2, [-4, -3.5, -3, -2.5, -2, -1.5, -1, -0.5, 0]),
+      ...coneRowByCount(-2, 9, 1, -4),
+      ...coneRowByCount(2, 9, 1, -4),
 
-      ...column(-0.5, [-0.8, -0.3, 0.2]),
-      ...column(2.4, [-1.5, -1, -0.5]),
-      ...column(2.4, [0.5, 1, 1.5]),
+      cone(-4, 0),
+      cone(-4, 1),
+      cone(-4, 2),
 
-      line(-5, 0, -2.4, 0),
-      line(-2.4, 0, -1.2, 1.2),
-      line(-1.2, 1.2, 0.2, 1.2),
-      line(0.2, 1.2, 1.6, 0),
-      line(1.6, 0, 4.2, 0),
+      cone(0, -1),
+      cone(0, 0),
+
+      cone(4, 0),
+      cone(4, 1),
+      cone(4, 2),
     ],
   },
 ];

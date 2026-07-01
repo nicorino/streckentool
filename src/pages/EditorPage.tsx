@@ -191,7 +191,8 @@ export function EditorPage() {
   const exportFrameLabel = getExportFormatLabel(exportFormat);
   const zoomPercent = Math.round(zoom * 100);
 
-  const effectiveSnapToGrid = activeTool === "calibrate" ? false : snapToGrid;
+  const effectiveSnapToGrid =
+    activeTool === "calibrate" || activeTool === "measure" ? false : snapToGrid;
   const statusHint = t(
     getEditorStatusHint({
       activeTool,

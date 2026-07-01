@@ -11,6 +11,9 @@ import {
   isConfigurableWechseltorTemplate,
   isConfigurableKreiselTemplate,
   isConfigurableSSpurgasseTemplate,
+  isConfigurableZGasseTemplate,
+  isConfigurableSpurgasseGeradeTemplate,
+  isConfigurableGasseTemplate,
   normalizeFigureConfig,
 } from "../figures/figureConfig";
 
@@ -74,6 +77,15 @@ export function LeftInspector({
   const selectedFigureIsConfigurableSSpurgasse =
     selectedFigureTemplate !== null &&
     isConfigurableSSpurgasseTemplate(selectedFigureTemplate);
+  const selectedFigureIsConfigurableZGasse =
+    selectedFigureTemplate !== null &&
+    isConfigurableZGasseTemplate(selectedFigureTemplate);
+  const selectedFigureIsConfigurableSpurgasseGerade =
+    selectedFigureTemplate !== null &&
+    isConfigurableSpurgasseGeradeTemplate(selectedFigureTemplate);
+  const selectedFigureIsConfigurableGasse =
+    selectedFigureTemplate !== null &&
+    isConfigurableGasseTemplate(selectedFigureTemplate);
 
   return (
     <aside style={inspectorStyle}>
@@ -448,6 +460,93 @@ export function LeftInspector({
                     config: {
                       ...selectedFigureConfig,
                       sSpurgasseLengthMeters: value,
+                    },
+                  })
+                }
+              />
+            )}
+            {selectedFigureIsConfigurableZGasse && (
+              <>
+                <NumberInput
+                  label={t("zGasseGateGap")}
+                  value={selectedFigureConfig.zGasseGateGapMeters ?? 2.5}
+                  min={2}
+                  max={4}
+                  step={0.1}
+                  onChange={(value) =>
+                    onUpdateSelectedFigure({
+                      config: {
+                        ...selectedFigureConfig,
+                        zGasseGateGapMeters: value,
+                      },
+                    })
+                  }
+                />
+
+                <label
+                  style={{
+                    display: "grid",
+                    gap: 6,
+                    fontSize: 12,
+                    fontWeight: 700,
+                  }}
+                >
+                  {t("zGasseMiddleGateOffset")}
+                  <select
+                    value={selectedFigureConfig.zGasseMiddleGateOffsetCones ?? 0}
+                    onChange={(event) =>
+                      onUpdateSelectedFigure({
+                        config: {
+                          ...selectedFigureConfig,
+                          zGasseMiddleGateOffsetCones: Number(event.target.value),
+                        },
+                      })
+                    }
+                    style={{
+                      height: 32,
+                      borderRadius: 8,
+                      border: "1px solid var(--st-border-soft)",
+                      background: "var(--st-card)",
+                      color: "var(--st-text)",
+                      padding: "0 8px",
+                    }}
+                  >
+                    <option value={-1}>{t("zGasseMiddleGateOffsetUp")}</option>
+                    <option value={0}>{t("zGasseMiddleGateOffsetNone")}</option>
+                    <option value={1}>{t("zGasseMiddleGateOffsetDown")}</option>
+                  </select>
+                </label>
+              </>
+            )}
+            {selectedFigureIsConfigurableSpurgasseGerade && (
+              <NumberInput
+                label={t("spurgasseGeradeLengthMeters")}
+                value={selectedFigureConfig.spurgasseGeradeLengthMeters ?? 8}
+                min={1}
+                max={30}
+                step={0.5}
+                onChange={(value) =>
+                  onUpdateSelectedFigure({
+                    config: {
+                      ...selectedFigureConfig,
+                      spurgasseGeradeLengthMeters: value,
+                    },
+                  })
+                }
+              />
+            )}
+            {selectedFigureIsConfigurableGasse && (
+              <NumberInput
+                label={t("gasseConeCount")}
+                value={selectedFigureConfig.gasseConeCount ?? 3}
+                min={3}
+                max={5}
+                step={1}
+                onChange={(value) =>
+                  onUpdateSelectedFigure({
+                    config: {
+                      ...selectedFigureConfig,
+                      gasseConeCount: Math.round(value),
                     },
                   })
                 }
