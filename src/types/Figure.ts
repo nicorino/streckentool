@@ -14,6 +14,7 @@ export type FigureElement =
       x: number;
       y: number;
       radius: number;
+      orientation?: FigureConeOrientation;
     }
   | {
       type: "line";
@@ -23,11 +24,18 @@ export type FigureElement =
       y2: number;
     };
 
+export type FigureConeOrientation = "left" | "right" | "up" | "down";
+
 export type FigureConfig = {
   scaleX?: number;
   scaleY?: number;
   coneCount?: number;
   coneDistanceMeters?: number;
+  slalomFirstConeOrientation?: FigureConeOrientation;
+  wechseltorMiddleGapMeters?: number;
+  kreiselEntryExitConeCount?: number;
+  sSpurgasseCurveAmount?: number;
+  sSpurgasseLengthMeters?: number;
 };
 
 export type FigureTemplate = {

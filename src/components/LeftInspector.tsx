@@ -8,6 +8,9 @@ import type { CourseBackgroundImage } from "../types/CourseBackgroundImage";
 import { type TranslationKey, useAppLanguage } from "../i18n/i18n";
 import {
   isConfigurableSlalomTemplate,
+  isConfigurableWechseltorTemplate,
+  isConfigurableKreiselTemplate,
+  isConfigurableSSpurgasseTemplate,
   normalizeFigureConfig,
 } from "../figures/figureConfig";
 
@@ -62,6 +65,15 @@ export function LeftInspector({
   const selectedFigureIsConfigurableSlalom =
     selectedFigureTemplate !== null &&
     isConfigurableSlalomTemplate(selectedFigureTemplate);
+  const selectedFigureIsConfigurableWechseltor =
+    selectedFigureTemplate !== null &&
+    isConfigurableWechseltorTemplate(selectedFigureTemplate);
+  const selectedFigureIsConfigurableKreisel =
+    selectedFigureTemplate !== null &&
+    isConfigurableKreiselTemplate(selectedFigureTemplate);
+  const selectedFigureIsConfigurableSSpurgasse =
+    selectedFigureTemplate !== null &&
+    isConfigurableSSpurgasseTemplate(selectedFigureTemplate);
 
   return (
     <aside style={inspectorStyle}>
@@ -150,7 +162,7 @@ export function LeftInspector({
               <NumberInput
                 label={t("widthM")}
                 value={backgroundImage.width}
-                min={0.5}
+                min={0}
                 step={0.5}
                 onChange={(value) => onUpdateBackgroundImage({ width: value })}
               />
@@ -158,7 +170,7 @@ export function LeftInspector({
               <NumberInput
                 label={t("heightM")}
                 value={backgroundImage.height}
-                min={0.5}
+                min={0}
                 step={0.5}
                 onChange={(value) => onUpdateBackgroundImage({ height: value })}
               />
@@ -326,7 +338,7 @@ export function LeftInspector({
                   <NumberInput
                     label={t("slalomConeDistance")}
                     value={selectedFigureConfig.coneDistanceMeters ?? 4}
-                    min={0.5}
+                    min={0}
                     max={10}
                     step={0.5}
                     onChange={(value) =>
@@ -338,8 +350,109 @@ export function LeftInspector({
                       })
                     }
                   />
+              <label
+                style={{
+                  display: "grid",
+                  gap: 6,
+                  fontSize: 12,
+                  fontWeight: 700,
+                }}
+              >
+                {t("slalomFirstConeDirection")}
+                <select
+                  value={selectedFigureConfig.slalomFirstConeOrientation ?? "left"}
+                  onChange={(event) =>
+                    onUpdateSelectedFigure({
+                      config: {
+                        ...selectedFigureConfig,
+                        slalomFirstConeOrientation:
+                          event.target.value === "right" ? "right" : "left",
+                      },
+                    })
+                  }
+                  style={{
+                    height: 32,
+                    borderRadius: 8,
+                    border: "1px solid var(--st-border-soft)",
+                    background: "var(--st-card)",
+                    color: "var(--st-text)",
+                    padding: "0 8px",
+                  }}
+                >
+                  <option value="left">{t("slalomFirstConeLeft")}</option>
+                  <option value="right">{t("slalomFirstConeRight")}</option>
+                </select>
+              </label>
                 </>
               )}
+            {selectedFigureIsConfigurableWechseltor && (
+              <NumberInput
+                label={t("wechseltorMiddleGap")}
+                value={selectedFigureConfig.wechseltorMiddleGapMeters ?? 2.5}
+                min={1.5}
+                max={4}
+                step={0.1}
+                onChange={(value) =>
+                  onUpdateSelectedFigure({
+                    config: {
+                      ...selectedFigureConfig,
+                      wechseltorMiddleGapMeters: value,
+                    },
+                  })
+                }
+              />
+            )}
+            {selectedFigureIsConfigurableKreisel && (
+              <NumberInput
+                label={t("kreiselEntryExitConeCount")}
+                value={selectedFigureConfig.kreiselEntryExitConeCount ?? 5}
+                min={3}
+                max={12}
+                step={1}
+                onChange={(value) =>
+                  onUpdateSelectedFigure({
+                    config: {
+                      ...selectedFigureConfig,
+                      kreiselEntryExitConeCount: value,
+                    },
+                  })
+                }
+              />
+            )}
+            {selectedFigureIsConfigurableSSpurgasse && (
+              <NumberInput
+                label={t("sSpurgasseCurveAmount")}
+                value={selectedFigureConfig.sSpurgasseCurveAmount ?? 3}
+                min={0}
+                max={6}
+                step={0.25}
+                onChange={(value) =>
+                  onUpdateSelectedFigure({
+                    config: {
+                      ...selectedFigureConfig,
+                      sSpurgasseCurveAmount: value,
+                    },
+                  })
+                }
+              />
+            )}
+            {selectedFigureIsConfigurableSSpurgasse && (
+              <NumberInput
+                label={t("sSpurgasseLengthMeters")}
+                value={selectedFigureConfig.sSpurgasseLengthMeters ?? 12}
+                min={3}
+                max={30}
+                step={0.5}
+                onChange={(value) =>
+                  onUpdateSelectedFigure({
+                    config: {
+                      ...selectedFigureConfig,
+                      sSpurgasseLengthMeters: value,
+                    },
+                  })
+                }
+              />
+            )}
             </DetailsSection>
           )}
 

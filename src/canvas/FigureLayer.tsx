@@ -1,14 +1,6 @@
 import { useEffect, useRef } from "react";
 import Konva from "konva";
-import {
-  Circle,
-  Group,
-  Layer,
-  Line,
-  Rect,
-  Text,
-  Transformer,
-} from "react-konva";
+import { Circle, Group, Layer, Line, Rect, Text, Transformer } from "react-konva";
 import type { FigureInstance, FigureTemplate } from "../types/Figure";
 import type { Selection } from "../types/Selection";
 import {
@@ -218,7 +210,31 @@ function FigureNode({
 
         {resolvedElements.map((element, index) => {
           if (element.type === "cone") {
+            if (
+            element.orientation === "left" ||
+            element.orientation === "right" ||
+            element.orientation === "up" ||
+            element.orientation === "down"
+          ) {
             return (
+              <Line
+                key={index}
+                points={getSidewaysConePoints(
+                  element.x,
+                  element.y,
+                  element.radius,
+                  element.orientation
+                )}
+                closed
+                fill={figure.coneColor}
+                stroke="#111827"
+                strokeWidth={1.8}
+                listening={false}
+              />
+            );
+          }
+
+          return (
               <Circle
                 key={index}
                 x={metersToPixels(element.x)}
@@ -301,3 +317,33 @@ function normalizeRotation(rotation: number) {
 
   return normalized;
 }
+
+function getSidewaysConePoints(
+  x: number,
+  y: number,
+  radius: number,
+  orientation: "left" | "right" | "up" | "down"
+) {
+  const effectiveRadius = radius * 0.82;
+
+  if (orientation === "up" || orientation === "down") {
+    const direction = orientation === "down" ? 1 : -1;
+    const tipX = metersToPixels(x);
+    const tipY = metersToPixels(y + direction * effectiveRadius * 1.15);
+    const leftX = metersToPixels(x - effectiveRadius * 0.78);
+    const rightX = metersToPixels(x + effectiveRadius * 0.78);
+    const baseY = metersToPixels(y - direction * effectiveRadius * 0.95);
+
+    return [tipX, tipY, leftX, baseY, rightX, baseY];
+  }
+
+  const direction = orientation === "right" ? 1 : -1;
+  const tipX = metersToPixels(x + direction * effectiveRadius * 1.15);
+  const centerY = metersToPixels(y);
+  const baseX = metersToPixels(x - direction * effectiveRadius * 0.95);
+  const topY = metersToPixels(y - effectiveRadius * 0.78);
+  const bottomY = metersToPixels(y + effectiveRadius * 0.78);
+
+  return [tipX, centerY, baseX, topY, baseX, bottomY];
+}
+

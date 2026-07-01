@@ -13,13 +13,42 @@ export type FigureLocalBounds = {
 };
 
 export const CONFIGURABLE_SLALOM_TEMPLATE_ID = "configurable-slalom";
+export const CONFIGURABLE_WECHSELTOR_TEMPLATE_ID = "configurable-wechseltor";
+export const CONFIGURABLE_KREISEL_TEMPLATE_ID = "configurable-kreisel";
+export const CONFIGURABLE_S_SPURGASSE_TEMPLATE_ID = "configurable-s-spurgasse";
 
-const DEFAULT_SLALOM_CONES = 5;
+const CONE_RADIUS = 0.25;
+
+const DEFAULT_SLALOM_CONES = 4;
 const DEFAULT_SLALOM_DISTANCE = 4;
 const MIN_SLALOM_CONES = 2;
 const MAX_SLALOM_CONES = 10;
 const MIN_SLALOM_DISTANCE = 0.5;
 const MAX_SLALOM_DISTANCE = 10;
+
+const WECHSELTOR_GATE_WIDTH = 1.65;
+const DEFAULT_WECHSELTOR_MIDDLE_GAP = 2.5;
+const MIN_WECHSELTOR_MIDDLE_GAP = 1.5;
+const MAX_WECHSELTOR_MIDDLE_GAP = 4;
+
+const KREISEL_INNER_OUTSIDE_DIAMETER = 10;
+const KREISEL_RING_CLEAR_SPACE = 1.65;
+const KREISEL_CONE_CENTER_SPACING = 1;
+const KREISEL_ENTRY_WIDTH = 3;
+const DEFAULT_KREISEL_ENTRY_EXIT_CONES = 5;
+const MIN_KREISEL_ENTRY_EXIT_CONES = 3;
+const MAX_KREISEL_ENTRY_EXIT_CONES = 12;
+
+const S_SPURGASSE_LANE_DISTANCE = 1.65;
+const S_SPURGASSE_CONE_CLEAR_SPACE = 0.5;
+const S_SPURGASSE_CONE_CENTER_SPACING =
+  S_SPURGASSE_CONE_CLEAR_SPACE + CONE_RADIUS * 2;
+const DEFAULT_S_SPURGASSE_CURVE_AMOUNT = 3;
+const DEFAULT_S_SPURGASSE_LENGTH_METERS = 12;
+const MIN_S_SPURGASSE_LENGTH_METERS = 3;
+const MAX_S_SPURGASSE_LENGTH_METERS = 30;
+const MIN_S_SPURGASSE_CURVE_AMOUNT = 0;
+const MAX_S_SPURGASSE_CURVE_AMOUNT = 6;
 
 const CONFIGURABLE_SLALOM_TEMPLATE: FigureTemplate = {
   id: CONFIGURABLE_SLALOM_TEMPLATE_ID,
@@ -30,18 +59,59 @@ const CONFIGURABLE_SLALOM_TEMPLATE: FigureTemplate = {
     "Konfigurierbarer Slalom mit 2–10 Pylonen und bis zu 10 m Abstand.",
   elements: createBaseSlalomElements(
     DEFAULT_SLALOM_CONES,
-    DEFAULT_SLALOM_DISTANCE
+    DEFAULT_SLALOM_DISTANCE,
+    "left"
   ),
+};
+
+const CONFIGURABLE_WECHSELTOR_TEMPLATE: FigureTemplate = {
+  id: CONFIGURABLE_WECHSELTOR_TEMPLATE_ID,
+  name: "Wechseltor",
+  shortName: "Wechseltor",
+  category: "Gates",
+  description:
+    "Zwei Pylonentore in einer Linie. Torbreite je 1,65 m, Mittelabstand 1,5–4 m. Spiegeln wechselt die Richtung.",
+  elements: createBaseWechseltorElements(DEFAULT_WECHSELTOR_MIDDLE_GAP),
+};
+
+const CONFIGURABLE_KREISEL_TEMPLATE: FigureTemplate = {
+  id: CONFIGURABLE_KREISEL_TEMPLATE_ID,
+  name: "Kreisel",
+  shortName: "Kreisel",
+  category: "Other",
+  description:
+    "Innenkreis außen 10 m, 1,65 m Abstand zwischen den Kreisen. Ein- und Ausfahrt über Anzahl der Pylonen dazwischen einstellbar.",
+  elements: createBaseKreiselElements(DEFAULT_KREISEL_ENTRY_EXIT_CONES),
+};
+
+const CONFIGURABLE_S_SPURGASSE_TEMPLATE: FigureTemplate = {
+  id: CONFIGURABLE_S_SPURGASSE_TEMPLATE_ID,
+  name: "S-Spurgasse",
+  shortName: "S-Spurgasse",
+  category: "Slalom",
+  description:
+    "S-förmige Spurgasse mit 1,65 m Abstand zwischen den Reihen und 50 cm Abstand zwischen Pylonen.",
+  elements: createBaseSSpurgasseElements(DEFAULT_S_SPURGASSE_CURVE_AMOUNT, DEFAULT_S_SPURGASSE_LENGTH_METERS),
 };
 
 export function withConfigurableFigureTemplates(
   templates: FigureTemplate[]
 ): FigureTemplate[] {
   const withoutDuplicateConfigurable = templates.filter(
-    (template) => template.id !== CONFIGURABLE_SLALOM_TEMPLATE_ID
+    (template) =>
+      template.id !== CONFIGURABLE_SLALOM_TEMPLATE_ID &&
+      template.id !== CONFIGURABLE_WECHSELTOR_TEMPLATE_ID &&
+      template.id !== CONFIGURABLE_KREISEL_TEMPLATE_ID &&
+      template.id !== CONFIGURABLE_S_SPURGASSE_TEMPLATE_ID
   );
 
-  return [CONFIGURABLE_SLALOM_TEMPLATE, ...withoutDuplicateConfigurable];
+  return [
+    CONFIGURABLE_SLALOM_TEMPLATE,
+    CONFIGURABLE_WECHSELTOR_TEMPLATE,
+    CONFIGURABLE_KREISEL_TEMPLATE,
+    CONFIGURABLE_S_SPURGASSE_TEMPLATE,
+    ...withoutDuplicateConfigurable,
+  ];
 }
 
 export function getLibraryFigureTemplates(
@@ -52,7 +122,13 @@ export function getLibraryFigureTemplates(
   return withConfigurable.filter(
     (template) =>
       template.id === CONFIGURABLE_SLALOM_TEMPLATE_ID ||
-      !isGenericSlalomVariant(template)
+      template.id === CONFIGURABLE_WECHSELTOR_TEMPLATE_ID ||
+      template.id === CONFIGURABLE_KREISEL_TEMPLATE_ID ||
+      template.id === CONFIGURABLE_S_SPURGASSE_TEMPLATE_ID ||
+      (!isGenericSlalomVariant(template) &&
+        !isGenericWechseltorVariant(template) &&
+        !isGenericKreiselVariant(template) &&
+        !isGenericSSpurgasseVariant(template))
   );
 }
 
@@ -60,10 +136,49 @@ export function isGenericSlalomVariant(template: FigureTemplate) {
   return /^slalom\s+\d+\s+pylonen?\s*\/\s*\d+/i.test(template.name.trim());
 }
 
+export function isGenericWechseltorVariant(template: FigureTemplate) {
+  const text = `${template.id} ${template.name} ${template.shortName ?? ""}`;
+
+  return /wechseltor/i.test(text);
+}
+
+export function isGenericKreiselVariant(template: FigureTemplate) {
+  const text = `${template.id} ${template.name} ${template.shortName ?? ""}`;
+
+  return /kreisel/i.test(text);
+}
+
+export function isGenericSSpurgasseVariant(template: FigureTemplate) {
+  const text = `${template.id} ${template.name} ${template.shortName ?? ""}`;
+
+  return /s[-\s]?spurgasse/i.test(text);
+}
+
 export function isConfigurableSlalomTemplate(template: FigureTemplate) {
   return (
     template.id === CONFIGURABLE_SLALOM_TEMPLATE_ID ||
     isGenericSlalomVariant(template)
+  );
+}
+
+export function isConfigurableWechseltorTemplate(template: FigureTemplate) {
+  return (
+    template.id === CONFIGURABLE_WECHSELTOR_TEMPLATE_ID ||
+    isGenericWechseltorVariant(template)
+  );
+}
+
+export function isConfigurableKreiselTemplate(template: FigureTemplate) {
+  return (
+    template.id === CONFIGURABLE_KREISEL_TEMPLATE_ID ||
+    isGenericKreiselVariant(template)
+  );
+}
+
+export function isConfigurableSSpurgasseTemplate(template: FigureTemplate) {
+  return (
+    template.id === CONFIGURABLE_S_SPURGASSE_TEMPLATE_ID ||
+    isGenericSSpurgasseVariant(template)
   );
 }
 
@@ -77,50 +192,97 @@ export function isSlalomTemplate(template: FigureTemplate) {
 export function createDefaultFigureConfig(
   template: FigureTemplate
 ): FigureConfig {
-  if (!isConfigurableSlalomTemplate(template)) {
-    return {};
+  if (isConfigurableSlalomTemplate(template)) {
+    return {
+      coneCount: DEFAULT_SLALOM_CONES,
+      coneDistanceMeters: DEFAULT_SLALOM_DISTANCE,
+      slalomFirstConeOrientation: "left",
+    };
   }
 
-  const cones = getTemplateCones(template);
+  if (isConfigurableWechseltorTemplate(template)) {
+    return {
+      wechseltorMiddleGapMeters: DEFAULT_WECHSELTOR_MIDDLE_GAP,
+    };
+  }
 
-  return {
-    coneCount: clampInt(
-      cones.length || DEFAULT_SLALOM_CONES,
-      MIN_SLALOM_CONES,
-      MAX_SLALOM_CONES
-    ),
-    coneDistanceMeters: clampNumber(
-      estimateConeDistance(cones),
-      MIN_SLALOM_DISTANCE,
-      MAX_SLALOM_DISTANCE
-    ),
-  };
+  if (isConfigurableKreiselTemplate(template)) {
+    return {
+      kreiselEntryExitConeCount: DEFAULT_KREISEL_ENTRY_EXIT_CONES,
+    };
+  }
+
+  if (isConfigurableSSpurgasseTemplate(template)) {
+    return {
+      sSpurgasseCurveAmount: DEFAULT_S_SPURGASSE_CURVE_AMOUNT,
+      sSpurgasseLengthMeters: DEFAULT_S_SPURGASSE_LENGTH_METERS,
+    };
+  }
+
+  return {};
 }
 
 export function normalizeFigureConfig(
   template: FigureTemplate,
   config: FigureConfig | undefined
 ): FigureConfig {
-  if (!isConfigurableSlalomTemplate(template)) {
-    return {};
+  if (isConfigurableSlalomTemplate(template)) {
+    const defaults = createDefaultFigureConfig(template);
+
+    return {
+      coneCount: clampInt(
+        config?.coneCount ?? defaults.coneCount ?? DEFAULT_SLALOM_CONES,
+        MIN_SLALOM_CONES,
+        MAX_SLALOM_CONES
+      ),
+      coneDistanceMeters: clampNumber(
+        config?.coneDistanceMeters ??
+          defaults.coneDistanceMeters ??
+          DEFAULT_SLALOM_DISTANCE,
+        MIN_SLALOM_DISTANCE,
+        MAX_SLALOM_DISTANCE
+      ),
+      slalomFirstConeOrientation:
+        config?.slalomFirstConeOrientation === "right" ? "right" : "left",
+    };
   }
 
-  const defaults = createDefaultFigureConfig(template);
+  if (isConfigurableWechseltorTemplate(template)) {
+    return {
+      wechseltorMiddleGapMeters: clampNumber(
+        config?.wechseltorMiddleGapMeters ?? DEFAULT_WECHSELTOR_MIDDLE_GAP,
+        MIN_WECHSELTOR_MIDDLE_GAP,
+        MAX_WECHSELTOR_MIDDLE_GAP
+      ),
+    };
+  }
 
-  return {
-    coneCount: clampInt(
-      config?.coneCount ?? defaults.coneCount ?? DEFAULT_SLALOM_CONES,
-      MIN_SLALOM_CONES,
-      MAX_SLALOM_CONES
-    ),
-    coneDistanceMeters: clampNumber(
-      config?.coneDistanceMeters ??
-        defaults.coneDistanceMeters ??
-        DEFAULT_SLALOM_DISTANCE,
-      MIN_SLALOM_DISTANCE,
-      MAX_SLALOM_DISTANCE
-    ),
-  };
+  if (isConfigurableKreiselTemplate(template)) {
+    return {
+      kreiselEntryExitConeCount: clampInt(
+        config?.kreiselEntryExitConeCount ?? DEFAULT_KREISEL_ENTRY_EXIT_CONES,
+        MIN_KREISEL_ENTRY_EXIT_CONES,
+        MAX_KREISEL_ENTRY_EXIT_CONES
+      ),
+    };
+  }
+
+  if (isConfigurableSSpurgasseTemplate(template)) {
+    return {
+      sSpurgasseCurveAmount: clampNumber(
+        config?.sSpurgasseCurveAmount ?? DEFAULT_S_SPURGASSE_CURVE_AMOUNT,
+        MIN_S_SPURGASSE_CURVE_AMOUNT,
+        MAX_S_SPURGASSE_CURVE_AMOUNT
+      ),
+      sSpurgasseLengthMeters: clampNumber(
+        config?.sSpurgasseLengthMeters ?? DEFAULT_S_SPURGASSE_LENGTH_METERS,
+        MIN_S_SPURGASSE_LENGTH_METERS,
+        MAX_S_SPURGASSE_LENGTH_METERS
+      ),
+    };
+  }
+
+  return {};
 }
 
 export function getResolvedFigureElements(
@@ -132,14 +294,34 @@ export function getResolvedFigureElements(
     getConfigFromFigureOrConfig(figureOrConfig)
   );
 
-  if (!isConfigurableSlalomTemplate(template)) {
-    return template.elements;
+  if (isConfigurableSlalomTemplate(template)) {
+    return createBaseSlalomElements(
+      config.coneCount ?? DEFAULT_SLALOM_CONES,
+      config.coneDistanceMeters ?? DEFAULT_SLALOM_DISTANCE,
+      config.slalomFirstConeOrientation === "right" ? "right" : "left"
+    );
   }
 
-  return createBaseSlalomElements(
-    config.coneCount ?? DEFAULT_SLALOM_CONES,
-    config.coneDistanceMeters ?? DEFAULT_SLALOM_DISTANCE
-  );
+  if (isConfigurableWechseltorTemplate(template)) {
+    return createBaseWechseltorElements(
+      config.wechseltorMiddleGapMeters ?? DEFAULT_WECHSELTOR_MIDDLE_GAP
+    );
+  }
+
+  if (isConfigurableKreiselTemplate(template)) {
+    return createBaseKreiselElements(
+      config.kreiselEntryExitConeCount ?? DEFAULT_KREISEL_ENTRY_EXIT_CONES
+    );
+  }
+
+  if (isConfigurableSSpurgasseTemplate(template)) {
+    return createBaseSSpurgasseElements(
+      config.sSpurgasseCurveAmount ?? DEFAULT_S_SPURGASSE_CURVE_AMOUNT,
+      config.sSpurgasseLengthMeters ?? DEFAULT_S_SPURGASSE_LENGTH_METERS
+    );
+  }
+
+  return template.elements;
 }
 
 export function getFigureLocalBounds(
@@ -196,7 +378,8 @@ function getConfigFromFigureOrConfig(
 
 function createBaseSlalomElements(
   coneCount: number,
-  coneDistanceMeters: number
+  coneDistanceMeters: number,
+  firstConeOrientation: "left" | "right"
 ): FigureElement[] {
   const count = clampInt(coneCount, MIN_SLALOM_CONES, MAX_SLALOM_CONES);
 
@@ -208,71 +391,281 @@ function createBaseSlalomElements(
 
   const totalLength = (count - 1) * distance;
   const startX = -totalLength / 2;
-  const cones: FigureElement[] = [];
+
+  const mainCones: FigureElement[] = [];
+  const indicatorCones: FigureElement[] = [];
+
+  const indicatorOffset = 0.85;
+  const indicatorRadius = CONE_RADIUS * 0.85;
 
   for (let index = 0; index < count; index += 1) {
-    cones.push({
+    const x = startX + index * distance;
+
+    const side =
+      index % 2 === 0
+        ? firstConeOrientation
+        : oppositeOrientation(firstConeOrientation);
+
+    // side === "left" keeps the marker below the cone.
+    // side === "right" keeps the marker above the cone.
+    // The marker itself points back toward the main cone.
+    const indicatorY = side === "left" ? indicatorOffset : -indicatorOffset;
+    const indicatorOrientation = side === "left" ? "up" : "down";
+
+    mainCones.push({
       type: "cone",
-      x: startX + index * distance,
+      x,
       y: 0,
-      radius: 0.25,
+      radius: CONE_RADIUS,
+    });
+
+    indicatorCones.push({
+      type: "cone",
+      x,
+      y: indicatorY,
+      radius: indicatorRadius,
+      orientation: indicatorOrientation,
+    });
+  }
+
+  return [...mainCones, ...indicatorCones];
+}
+
+function createBaseWechseltorElements(middleGapMeters: number): FigureElement[] {
+  const middleGap = clampNumber(
+    middleGapMeters,
+    MIN_WECHSELTOR_MIDDLE_GAP,
+    MAX_WECHSELTOR_MIDDLE_GAP
+  );
+
+  const halfGap = middleGap / 2;
+
+  return [
+    {
+      type: "cone",
+      x: -(halfGap + WECHSELTOR_GATE_WIDTH),
+      y: 0,
+      radius: CONE_RADIUS,
+    },
+    {
+      type: "cone",
+      x: -halfGap,
+      y: 0,
+      radius: CONE_RADIUS,
+    },
+    {
+      type: "cone",
+      x: 0,
+      y: 0,
+      radius: 0.42,
+      orientation: "left",
+    },
+    {
+      type: "cone",
+      x: halfGap,
+      y: 0,
+      radius: CONE_RADIUS,
+    },
+    {
+      type: "cone",
+      x: halfGap + WECHSELTOR_GATE_WIDTH,
+      y: 0,
+      radius: CONE_RADIUS,
+    },
+  ];
+}
+
+function createBaseKreiselElements(entryExitConeCount: number): FigureElement[] {
+  const conesBetweenEntryAndExit = clampInt(
+    entryExitConeCount,
+    MIN_KREISEL_ENTRY_EXIT_CONES,
+    MAX_KREISEL_ENTRY_EXIT_CONES
+  );
+
+  const innerCenterRadius = KREISEL_INNER_OUTSIDE_DIAMETER / 2 - CONE_RADIUS;
+  const outerCenterRadius =
+    innerCenterRadius + CONE_RADIUS * 2 + KREISEL_RING_CLEAR_SPACE;
+
+  // The configurable value describes the number of regular outer-ring cones
+  // between entry and exit. Use the outer ring for this spacing because that is
+  // the visible entry/exit side of the figure.
+  const entryExitAngle =
+    ((conesBetweenEntryAndExit + 1) * KREISEL_CONE_CENTER_SPACING) /
+    outerCenterRadius;
+
+  const entryAngle = Math.PI - entryExitAngle / 2;
+  const exitAngle = Math.PI + entryExitAngle / 2;
+
+  const innerStep = KREISEL_CONE_CENTER_SPACING / innerCenterRadius;
+  const outerStep = KREISEL_CONE_CENTER_SPACING / outerCenterRadius;
+
+  const openingHalfAngle = KREISEL_ENTRY_WIDTH / outerCenterRadius / 2;
+
+  return [
+    // Inner circle stays complete. Only the outer circle receives openings.
+    ...createRingCones(innerCenterRadius, innerStep, []),
+    ...createRingCones(outerCenterRadius, outerStep, [
+      { angle: entryAngle, halfAngle: openingHalfAngle },
+      { angle: exitAngle, halfAngle: openingHalfAngle },
+    ]),
+    // Indicator cones disabled for now.
+
+  ];
+}
+
+function createBaseSSpurgasseElements(curveAmountMeters: number, lengthMetersInput: number): FigureElement[] {
+  const curveAmount = clampNumber(
+    curveAmountMeters,
+    MIN_S_SPURGASSE_CURVE_AMOUNT,
+    MAX_S_SPURGASSE_CURVE_AMOUNT
+  );
+
+  const laneDistance = S_SPURGASSE_LANE_DISTANCE;
+  const lengthMeters = clampNumber(
+    lengthMetersInput,
+    MIN_S_SPURGASSE_LENGTH_METERS,
+    MAX_S_SPURGASSE_LENGTH_METERS
+  );
+  const sampleCount = Math.max(80, Math.round(lengthMeters * 18));
+
+  const upperCurve: { x: number; y: number }[] = [];
+  const lowerCurve: { x: number; y: number }[] = [];
+
+  for (let index = 0; index <= sampleCount; index += 1) {
+    const t = index / sampleCount;
+    const x = (t - 0.5) * lengthMeters;
+
+    // Smooth S-centerline. Curve amount controls the vertical shift.
+    const smooth = t * t * (3 - 2 * t);
+    const y = (smooth - 0.5) * curveAmount;
+
+    // Derivative of the smoothstep centerline.
+    const dyDx = (6 * t * (1 - t) * curveAmount) / lengthMeters;
+    const normalLength = Math.hypot(-dyDx, 1);
+    const normalX = -dyDx / normalLength;
+    const normalY = 1 / normalLength;
+
+    upperCurve.push({
+      x: x + normalX * (laneDistance / 2),
+      y: y + normalY * (laneDistance / 2),
+    });
+
+    lowerCurve.push({
+      x: x - normalX * (laneDistance / 2),
+      y: y - normalY * (laneDistance / 2),
     });
   }
 
   return [
-    {
-      type: "line",
-      x1: startX,
-      y1: 0,
-      x2: -startX,
-      y2: 0,
-    },
-    ...cones,
+    ...samplePolylineCones(upperCurve, S_SPURGASSE_CONE_CENTER_SPACING),
+    ...samplePolylineCones(lowerCurve, S_SPURGASSE_CONE_CENTER_SPACING),
   ];
 }
 
-function getTemplateCones(template: FigureTemplate) {
-  return template.elements.filter(
-    (element): element is Extract<FigureElement, { type: "cone" }> =>
-      element.type === "cone"
-  );
-}
+function samplePolylineCones(
+  points: { x: number; y: number }[],
+  spacing: number
+): FigureElement[] {
+  const cones: FigureElement[] = [];
 
-function estimateConeDistance(
-  cones: Extract<FigureElement, { type: "cone" }>[]
-) {
-  if (cones.length < 2) {
-    return DEFAULT_SLALOM_DISTANCE;
+  if (points.length === 0) {
+    return cones;
   }
 
-  const sortedByX = [...cones].sort((a, b) => a.x - b.x);
-  const sortedByY = [...cones].sort((a, b) => a.y - b.y);
+  let previous = points[0];
+  let distanceSinceLastCone = 0;
 
-  const spanX = Math.abs(sortedByX[sortedByX.length - 1].x - sortedByX[0].x);
-  const spanY = Math.abs(sortedByY[sortedByY.length - 1].y - sortedByY[0].y);
+  cones.push({
+    type: "cone",
+    x: previous.x,
+    y: previous.y,
+    radius: CONE_RADIUS,
+  });
 
-  const sorted = spanX >= spanY ? sortedByX : sortedByY;
-  const distances: number[] = [];
+  for (let index = 1; index < points.length; index += 1) {
+    let current = points[index];
+    let segmentLength = Math.hypot(current.x - previous.x, current.y - previous.y);
 
-  for (let index = 1; index < sorted.length; index += 1) {
-    const distance = Math.hypot(
-      sorted[index].x - sorted[index - 1].x,
-      sorted[index].y - sorted[index - 1].y
-    );
+    while (distanceSinceLastCone + segmentLength >= spacing) {
+      const remaining = spacing - distanceSinceLastCone;
+      const ratio = segmentLength === 0 ? 0 : remaining / segmentLength;
 
-    if (distance > 0) {
-      distances.push(distance);
+      const conePoint = {
+        x: previous.x + (current.x - previous.x) * ratio,
+        y: previous.y + (current.y - previous.y) * ratio,
+      };
+
+      cones.push({
+        type: "cone",
+        x: conePoint.x,
+        y: conePoint.y,
+        radius: CONE_RADIUS,
+      });
+
+      previous = conePoint;
+      segmentLength = Math.hypot(current.x - previous.x, current.y - previous.y);
+      distanceSinceLastCone = 0;
     }
+
+    distanceSinceLastCone += segmentLength;
+    previous = current;
   }
 
-  if (distances.length === 0) {
-    return DEFAULT_SLALOM_DISTANCE;
-  }
-
-  return (
-    distances.reduce((sum, distance) => sum + distance, 0) / distances.length
-  );
+  return cones;
 }
+
+function createRingCones(
+  radius: number,
+  stepAngle: number,
+  openings: { angle: number; halfAngle: number }[]
+): FigureElement[] {
+  const coneCount = Math.max(8, Math.round((Math.PI * 2) / stepAngle));
+  const cones: FigureElement[] = [];
+
+  for (let index = 0; index < coneCount; index += 1) {
+    const angle = (index / coneCount) * Math.PI * 2;
+
+    if (
+      openings.some(
+        (opening) =>
+          angularDistance(angle, opening.angle) <= opening.halfAngle
+      )
+    ) {
+      continue;
+    }
+
+    cones.push({
+      type: "cone",
+      x: Math.cos(angle) * radius,
+      y: Math.sin(angle) * radius,
+      radius: CONE_RADIUS,
+    });
+  }
+
+  return cones;
+}
+
+function oppositeOrientation(orientation: "left" | "right") {
+  return orientation === "left" ? "right" : "left";
+}
+
+function angularDistance(a: number, b: number) {
+  const difference = Math.abs(normalizeAngle(a - b));
+
+  return Math.min(difference, Math.PI * 2 - difference);
+}
+
+function normalizeAngle(angle: number) {
+  let result = angle % (Math.PI * 2);
+
+  if (result < 0) {
+    result += Math.PI * 2;
+  }
+
+  return result;
+}
+
+
 
 function clampNumber(value: number, min: number, max: number) {
   if (!Number.isFinite(value)) {
