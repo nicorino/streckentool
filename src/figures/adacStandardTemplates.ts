@@ -135,10 +135,9 @@ export const STANDARD_COURSE_TEMPLATES: FigureTemplate[] = [
     name: "Spurgasse gerade",
     category: "Gates",
     description:
-      "Gerade Spurgasse mit fünf Pylonen pro Seite. Praktische Standardbreite 1,6 m.",
+      "Gerade Spurgasse mit 1,65 m Breite und 80 cm Pylonen-Mittelabstand.",
     elements: [
-      ...straightGateRow([-4, -2, 0, 2, 4], 0.8),
-      line(-4.5, 0, 4.5, 0),
+      ...straightGateRow([-4, -3.2, -2.4, -1.6, -0.8, 0, 0.8, 1.6, 2.4, 3.2, 4], 0.825),
     ],
   },
   {
@@ -188,32 +187,28 @@ export const STANDARD_COURSE_TEMPLATES: FigureTemplate[] = [
     name: "Ypsilon",
     category: "Other",
     description:
-      "Y-förmige Aufgabe mit 1,65 m Fahrspurbreite und 50 cm Pylonenabstand.",
+      "Y-förmige Aufgabe mit 1,65 m Fahrspurbreite und 80 cm Pylonen-Mittelabstand.",
     elements: [
-      // Left entry: three cones per side.
-      ...row(-0.825, [-5, -4, -3]),
-      ...row(0.825, [-5, -4, -3]),
+      ...row(-0.825, [-5, -4.2, -3.4]),
+      ...row(0.825, [-5, -4.2, -3.4]),
 
-      // Upper branch: five cones diagonally, then three straight.
-      cone(-2, -0.825),
-      cone(-1, -1.25),
-      cone(0, -1.7),
-      cone(1, -2.15),
-      cone(2, -2.6),
-      ...row(-2.6, [3, 4, 5]),
+      cone(-2.6, -0.825),
+      cone(-1.86, -1.15),
+      cone(-1.12, -1.48),
+      cone(-0.38, -1.81),
+      cone(0.36, -2.14),
+      ...row(-2.14, [1.1, 1.9, 2.7]),
 
-      // Lower branch: five cones diagonally, then three straight.
-      cone(-2, 0.825),
-      cone(-1, 1.25),
-      cone(0, 1.7),
-      cone(1, 2.15),
-      cone(2, 2.6),
-      ...row(2.6, [3, 4, 5]),
+      cone(-2.6, 0.825),
+      cone(-1.86, 1.15),
+      cone(-1.12, 1.48),
+      cone(-0.38, 1.81),
+      cone(0.36, 2.14),
+      ...row(2.14, [1.1, 1.9, 2.7]),
 
-      // Middle guide section: six cones like a short spurgasse plus one closing cone.
-      ...row(-0.825, [3, 4, 5]),
-      ...row(0.825, [3, 4, 5]),
-      cone(2, 0),
+      ...row(-0.49, [1.1, 1.9, 2.7]),
+      ...row(0.49, [1.1, 1.9, 2.7]),
+      cone(0.36, 0),
     ],
   },
   {
@@ -278,19 +273,27 @@ export const STANDARD_COURSE_TEMPLATES: FigureTemplate[] = [
     name: "Kasten",
     category: "Boxes",
     description:
-      "Kastenaufgabe mit Ein- und Ausfahrt. Praktische Standardvariante.",
+      "Kasten mit versetztem Ein- und Ausgang, 1,65 m Durchfahrtsbreite und 80 cm Pylonen-Mittelabstand.",
     elements: [
-      ...row(-2, [-3, -2.5, -2, -1.5]),
-      ...column(-3, [-1.5, -1, -0.5, 0]),
-      ...row(0, [-1.5, -1, -0.5]),
-      ...column(0, [-1.5, -1, -0.5, 0]),
+      ...column(-2.65, [-1.6, -0.8, 0, 0.8, 1.6]),
+      ...row(-1.6, [-2.65, -1.85, -1.05]),
 
-      ...column(2, [-2, -1.5, -1, -0.5, 0]),
-      ...row(0, [2.5, 3, 3.5]),
-      ...column(3.5, [-1.5, -1, -0.5, 0]),
+      ...column(0.6, [-1.6, -0.8, 0, 0.8, 1.6]),
+      ...row(1.6, [-1.0, -0.2, 0.6]),
+    ],
+  },
+  {
+    id: "kasten-90-grad-2026",
+    name: "Kasten 90 Grad",
+    category: "Boxes",
+    description:
+      "Kasten mit 90-Grad-Ausfahrt, spiegelbar für links oder rechts.",
+    elements: [
+      ...row(-1.6, [-2.2, -1.4, -0.6, 0.2, 1]),
+      ...column(-2.2, [-1.6, -0.8, 0, 0.8, 1.6]),
 
-      line(-3.6, -1, -1.2, -1),
-      line(1.6, -1, 4.1, -1),
+      ...column(1, [0, 0.8, 1.6]),
+      ...row(1.6, [-0.6, 0.2, 1]),
     ],
   },
   {
@@ -298,42 +301,83 @@ export const STANDARD_COURSE_TEMPLATES: FigureTemplate[] = [
     name: "Kreisel",
     category: "Other",
     description:
-      "Kreisel mit 10 m Innendurchmesser und 1 m Pylonenabstand als praktische Vorlage.",
+      "Kreisel mit 10 m Innendurchmesser und 80 cm Pylonen-Mittelabstand als praktische Vorlage.",
     elements: [
-      ...arcCones(0, 0, 5, 0, 360, 32),
-      ...arcCones(0, 0, 6.6, 0, 360, 40),
-      line(-5, 0, 5, 0),
+      ...arcCones(0, 0, 5, 0, 360, 39),
+      ...arcCones(0, 0, 6.6, 0, 360, 52),
     ],
   },
   {
     id: "schneckenhaus-2026",
-    name: "Schneckenhaus",
+    name: "Schnecke",
     category: "Boxes",
     description:
-      "Schneckenhaus als rechteckige Spiralform. Kastenbreite ca. 3 m.",
+      "Schnecke mit ca. 3 m Kastenbreite, 1,65 m Fahrspurbreite und 80 cm Pylonen-Mittelabstand.",
     elements: [
-      ...column(-4, [-2, -1.5, -1, -0.5, 0]),
-      ...column(-3, [-2, -1.5, -1, -0.5, 0]),
-      ...column(-1.5, [-2, -1.5, -1, -0.5, 0]),
-      ...row(-2, [-1, -0.5, 0, 0.5, 1, 1.5, 2]),
-      ...column(2, [-1.5, -1, -0.5, 0]),
-      ...row(0, [-1, -0.5, 0, 0.5, 1]),
-      ...column(3.5, [-2, -1.5, -1, -0.5, 0]),
-      line(-4.5, -1, 3.8, -1),
+      // Left double gate, 5 cones tall.
+      ...column(-4, [-1.6, -0.8, 0, 0.8, 1.6]),
+      ...column(-2.35, [-1.6, -0.8, 0, 0.8, 1.6]),
+
+      // Inner box with exact 0.8 m horizontal spacing.
+      ...column(-0.7, [-1.6, -0.8, 0, 0.8, 1.6]),
+      ...row(-1.6, [-0.7, 0.1, 0.9, 1.7, 2.5, 3.3]),
+      ...column(3.3, [-1.6, -0.8, 0, 0.8, 1.6]),
+      ...row(1.6, [-0.7, 0.1, 0.9, 1.7, 2.5, 3.3]),
+
+      // Right gate, kept 1.65 m from the shifted box wall.
+      ...column(4.95, [-1.6, -0.8, 0, 0.8, 1.6]),
     ],
   },
   {
     id: "kreuz-2026",
     name: "Kreuz",
     category: "Boxes",
-    description: "Kreuzförmige Aufgabe mit 0,5 m Pylonenabstand.",
+    description:
+      "Kreuz aus vier L-Formen mit 1,65 m Fahrspurbreite und 80 cm Pylonen-Mittelabstand.",
     elements: [
-      ...column(-0.8, [-3, -2.5, -2, 2, 2.5, 3]),
-      ...column(0.8, [-3, -2.5, -2, 2, 2.5, 3]),
-      ...row(-0.8, [-3, -2.5, -2, 2, 2.5, 3]),
-      ...row(0.8, [-3, -2.5, -2, 2, 2.5, 3]),
-      line(0, -3.5, 0, 3.5),
-      line(-3.5, 0, 3.5, 0),
+      // Top-left L.
+      ...row(-0.825, [-2.425, -1.625, -0.825]),
+      ...column(-0.825, [-2.425, -1.625, -0.825]),
+
+      // Top-right L.
+      ...row(-0.825, [0.825, 1.625, 2.425]),
+      ...column(0.825, [-2.425, -1.625, -0.825]),
+
+      // Bottom-left L.
+      ...row(0.825, [-2.425, -1.625, -0.825]),
+      ...column(-0.825, [0.825, 1.625, 2.425]),
+
+      // Bottom-right L.
+      ...row(0.825, [0.825, 1.625, 2.425]),
+      ...column(0.825, [0.825, 1.625, 2.425]),
+    ],
+  },
+  {
+    id: "kreuz-kurz-2026",
+    name: "Kreuz kurz",
+    category: "Boxes",
+    description:
+      "Kurzes Kreuz aus vier 3-Pylonen-L-Formen mit 1,65 m Fahrspurbreite.",
+    elements: [
+      // Top-left L.
+      cone(-1.625, -0.825),
+      cone(-0.825, -0.825),
+      cone(-0.825, -1.625),
+
+      // Top-right L.
+      cone(1.625, -0.825),
+      cone(0.825, -0.825),
+      cone(0.825, -1.625),
+
+      // Bottom-left L.
+      cone(-1.625, 0.825),
+      cone(-0.825, 0.825),
+      cone(-0.825, 1.625),
+
+      // Bottom-right L.
+      cone(1.625, 0.825),
+      cone(0.825, 0.825),
+      cone(0.825, 1.625),
     ],
   },
   {
@@ -341,27 +385,23 @@ export const STANDARD_COURSE_TEMPLATES: FigureTemplate[] = [
     name: "Brezel",
     category: "Other",
     description:
-      "Brezel mit 1,65 m Fahrspurbreite und 50 cm Pylonenabstand.",
+      "Brezel mit 1,65 m Fahrspurbreite und 80 cm Pylonen-Mittelabstand.",
     elements: [
-      // Top straight: 10 cones.
-      ...coneRowByCount(-3, 10, 1, -4.5),
+      ...coneRowByCount(-3, 10, 0.8, -3.6),
 
-      // Left and right short rows: 3 cones each, 1.65 m below top row.
-      ...row(-1.35, [-4.5, -3.5, -2.5]),
-      ...row(-1.35, [2.5, 3.5, 4.5]),
+      ...row(-1.35, [-3.6, -2.8, -2]),
+      ...row(-1.35, [2, 2.8, 3.6]),
 
-      // Upper transition pair: 2.5 m wide.
       cone(-1.25, -0.75),
       cone(1.25, -0.75),
 
-      // Lower vertical gate: 1.65 m wide, straight columns.
-      cone(-0.825, 0.25),
-      cone(-0.825, 1.25),
-      cone(-0.825, 2.25),
+      cone(-0.825, 0.05),
+      cone(-0.825, 0.85),
+      cone(-0.825, 1.65),
 
-      cone(0.825, 0.25),
-      cone(0.825, 1.25),
-      cone(0.825, 2.25),
+      cone(0.825, 0.05),
+      cone(0.825, 0.85),
+      cone(0.825, 1.65),
     ],
   },
   {
@@ -369,13 +409,16 @@ export const STANDARD_COURSE_TEMPLATES: FigureTemplate[] = [
     name: "Deutsches Eck - groß",
     category: "Boxes",
     description:
-      "Großes Deutsches Eck mit 1,65 m Fahrspurbreite und 50 cm Pylonenabstand.",
+      "Großes Deutsches Eck mit 1,65 m Fahrspurbreite und 80 cm Pylonen-Mittelabstand.",
     elements: [
-      ...row(-3, [-4, -3, -2, -1, 0, 1]),
-      ...column(-4, [-3, -2, -1, 0, 1, 2]),
+      ...row(-2, [-3.2, -2.4, -1.6, -0.8, 0, 0.8]),
+      ...column(-3.2, [-2, -1.2, -0.4, 0.4, 1.2, 2]),
 
-      ...row(-1.35, [-2.35, -1.35, -0.35]),
-      ...column(-2.35, [0, 1, 2]),
+      cone(-1.55, 2),
+      cone(-1.55, 1.2),
+      cone(-1.15, 0.06),
+      cone(0.05, -0.4),
+      cone(0.85, -0.4),
     ],
   },
   {
@@ -411,10 +454,10 @@ export const STANDARD_COURSE_TEMPLATES: FigureTemplate[] = [
     name: "Zielgasse",
     category: "Gates",
     description:
-      "Zielgasse: 2,5 m breit und 8-10 m lang. Vorlage mit 9 m Länge, ohne Haltelinie.",
+      "Zielgasse: 2,5 m breit und 8-10 m lang. Vorlage mit ca. 9 m Länge.",
     elements: [
-      ...coneRowByCount(-1.25, 10, 1),
-      ...coneRowByCount(1.25, 10, 1),
+      ...coneRowByCount(-1.25, 12, 0.8),
+      ...coneRowByCount(1.25, 12, 0.8),
     ],
   },
   {
@@ -422,21 +465,19 @@ export const STANDARD_COURSE_TEMPLATES: FigureTemplate[] = [
     name: "Schikane",
     category: "Boxes",
     description:
-      "Schikane mit 1,65 m breiten Durchfahrten und 50 cm Pylonenabstand.",
+      "Schikane mit 1,65 m breiten Durchfahrten und 80 cm Pylonen-Mittelabstand.",
     elements: [
-      ...coneRowByCount(-2, 9, 1, -4),
-      ...coneRowByCount(2, 9, 1, -4),
+      ...coneRowByCount(-2, 9, 0.8, -3.7),
+      ...coneRowByCount(1.25, 9, 0.8, -3.7),
 
-      cone(-4, 0),
-      cone(-4, 1),
-      cone(-4, 2),
+      cone(-3.7, -0.35),
+      cone(-3.7, 0.45),
 
-      cone(0, -1),
-      cone(0, 0),
+      cone(-0.5, -1.2),
+      cone(-0.5, -0.4),
 
-      cone(4, 0),
-      cone(4, 1),
-      cone(4, 2),
+      cone(2.7, -0.35),
+      cone(2.7, 0.45),
     ],
   },
 ];

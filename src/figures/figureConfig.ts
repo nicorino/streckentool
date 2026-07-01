@@ -36,16 +36,13 @@ const MAX_WECHSELTOR_MIDDLE_GAP = 4;
 
 const KREISEL_INNER_OUTSIDE_DIAMETER = 10;
 const KREISEL_RING_CLEAR_SPACE = 1.65;
-const KREISEL_CONE_CENTER_SPACING = 1;
-const KREISEL_ENTRY_WIDTH = 3;
+const KREISEL_CONE_CENTER_SPACING = 0.8;
 const DEFAULT_KREISEL_ENTRY_EXIT_CONES = 5;
 const MIN_KREISEL_ENTRY_EXIT_CONES = 3;
 const MAX_KREISEL_ENTRY_EXIT_CONES = 12;
 
 const S_SPURGASSE_LANE_DISTANCE = 1.65;
-const S_SPURGASSE_CONE_CLEAR_SPACE = 0.5;
-const S_SPURGASSE_CONE_CENTER_SPACING =
-  S_SPURGASSE_CONE_CLEAR_SPACE + CONE_RADIUS * 2;
+const S_SPURGASSE_CONE_CENTER_SPACING = 0.8;
 const DEFAULT_S_SPURGASSE_CURVE_AMOUNT = 3;
 const DEFAULT_S_SPURGASSE_LENGTH_METERS = 12;
 const MIN_S_SPURGASSE_LENGTH_METERS = 3;
@@ -54,8 +51,7 @@ const MIN_S_SPURGASSE_CURVE_AMOUNT = 0;
 const MAX_S_SPURGASSE_CURVE_AMOUNT = 6;
 
 const Z_GASSE_LANE_WIDTH = 1.65;
-const Z_GASSE_CONE_CLEAR_SPACE = 0.5;
-const Z_GASSE_CONE_CENTER_SPACING = Z_GASSE_CONE_CLEAR_SPACE + CONE_RADIUS * 2;
+const Z_GASSE_CONE_CENTER_SPACING = 0.8;
 const Z_GASSE_CONES_PER_ROW = 5;
 const DEFAULT_Z_GASSE_GATE_GAP_METERS = 2.5;
 const MIN_Z_GASSE_GATE_GAP_METERS = 2;
@@ -65,9 +61,7 @@ const MIN_Z_GASSE_MIDDLE_GATE_OFFSET_CONES = -1;
 const MAX_Z_GASSE_MIDDLE_GATE_OFFSET_CONES = 1;
 
 const SPURGASSE_GERADE_LANE_WIDTH = 1.65;
-const SPURGASSE_GERADE_CONE_CLEAR_SPACE = 0.5;
-const SPURGASSE_GERADE_CONE_CENTER_SPACING =
-  SPURGASSE_GERADE_CONE_CLEAR_SPACE + CONE_RADIUS * 2;
+const SPURGASSE_GERADE_CONE_CENTER_SPACING = 0.8;
 const DEFAULT_SPURGASSE_GERADE_LENGTH_METERS = 8;
 const MIN_SPURGASSE_GERADE_LENGTH_METERS = 1;
 const MAX_SPURGASSE_GERADE_LENGTH_METERS = 30;
@@ -663,36 +657,24 @@ function createBaseKreiselElements(entryExitConeCount: number): FigureElement[] 
     MAX_KREISEL_ENTRY_EXIT_CONES
   );
 
-  const innerCenterRadius = KREISEL_INNER_OUTSIDE_DIAMETER / 2 - CONE_RADIUS;
-  const outerCenterRadius =
-    innerCenterRadius + CONE_RADIUS * 2 + KREISEL_RING_CLEAR_SPACE;
+  const innerRadius = KREISEL_INNER_OUTSIDE_DIAMETER / 2;
+  const outerRadius = innerRadius + KREISEL_RING_CLEAR_SPACE;
 
-  // The configurable value describes the number of regular outer-ring cones
-  // between entry and exit. Use the outer ring for this spacing because that is
-  // the visible entry/exit side of the figure.
-  const entryExitAngle =
-    ((conesBetweenEntryAndExit + 1) * KREISEL_CONE_CENTER_SPACING) /
-    outerCenterRadius;
+  const outerConeCount = getRingConeCount(outerRadius);
+  const leftIndex = Math.round(outerConeCount / 2);
 
-  const entryAngle = Math.PI - entryExitAngle / 2;
-  const exitAngle = Math.PI + entryExitAngle / 2;
-
-  const innerStep = KREISEL_CONE_CENTER_SPACING / innerCenterRadius;
-  const outerStep = KREISEL_CONE_CENTER_SPACING / outerCenterRadius;
-
-  const openingHalfAngle = KREISEL_ENTRY_WIDTH / outerCenterRadius / 2;
+  // The inspector value is the exact number of outer-ring cones that remain
+  // between the entry and exit openings.
+  const entryIndex = leftIndex - Math.ceil((conesBetweenEntryAndExit + 1) / 2);
+  const exitIndex = entryIndex + conesBetweenEntryAndExit + 1;
 
   return [
-    // Inner circle stays complete. Only the outer circle receives openings.
-    ...createRingCones(innerCenterRadius, innerStep, []),
-    ...createRingCones(outerCenterRadius, outerStep, [
-      { angle: entryAngle, halfAngle: openingHalfAngle },
-      { angle: exitAngle, halfAngle: openingHalfAngle },
-    ]),
-    // Indicator cones disabled for now.
-
+    ...createRingConesBySkippedIndexes(innerRadius, []),
+    ...createRingConesBySkippedIndexes(outerRadius, [entryIndex, exitIndex]),
   ];
 }
+
+
 
 function createBaseSSpurgasseElements(curveAmountMeters: number, lengthMetersInput: number): FigureElement[] {
   const curveAmount = clampNumber(
@@ -885,30 +867,36 @@ function samplePolylineCones(
   return cones;
 }
 
-function createRingCones(
+
+
+function getRingConeCount(radius: number) {
+  return Math.max(
+    8,
+    Math.round((Math.PI * 2 * radius) / KREISEL_CONE_CENTER_SPACING)
+  );
+}
+
+function createRingConesBySkippedIndexes(
   radius: number,
-  stepAngle: number,
-  openings: { angle: number; halfAngle: number }[]
+  skippedIndexes: number[]
 ): FigureElement[] {
-  const coneCount = Math.max(8, Math.round((Math.PI * 2) / stepAngle));
+  const coneCount = getRingConeCount(radius);
+  const skipped = new Set(
+    skippedIndexes.map((index) => ((index % coneCount) + coneCount) % coneCount)
+  );
   const cones: FigureElement[] = [];
 
   for (let index = 0; index < coneCount; index += 1) {
-    const angle = (index / coneCount) * Math.PI * 2;
-
-    if (
-      openings.some(
-        (opening) =>
-          angularDistance(angle, opening.angle) <= opening.halfAngle
-      )
-    ) {
+    if (skipped.has(index)) {
       continue;
     }
 
+    const angle = (index / coneCount) * Math.PI * 2;
+
     cones.push({
       type: "cone",
-      x: Math.cos(angle) * radius,
-      y: Math.sin(angle) * radius,
+      x: Number((Math.cos(angle) * radius).toFixed(3)),
+      y: Number((Math.sin(angle) * radius).toFixed(3)),
       radius: CONE_RADIUS,
     });
   }
@@ -919,24 +907,6 @@ function createRingCones(
 function oppositeOrientation(orientation: "left" | "right") {
   return orientation === "left" ? "right" : "left";
 }
-
-function angularDistance(a: number, b: number) {
-  const difference = Math.abs(normalizeAngle(a - b));
-
-  return Math.min(difference, Math.PI * 2 - difference);
-}
-
-function normalizeAngle(angle: number) {
-  let result = angle % (Math.PI * 2);
-
-  if (result < 0) {
-    result += Math.PI * 2;
-  }
-
-  return result;
-}
-
-
 
 function clampNumber(value: number, min: number, max: number) {
   if (!Number.isFinite(value)) {
