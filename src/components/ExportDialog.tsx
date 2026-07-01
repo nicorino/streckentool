@@ -94,6 +94,13 @@ export function ExportDialog({
     };
   }, [exportFormat, onCreatePreview, previewVersion, printPreview, showHelperLines]);
 
+  function changeFileType(nextFileType: ExportFileType) {
+    setFileType(nextFileType);
+    setFileName((currentFileName) =>
+      normalizeExportFileName(currentFileName || defaultFileName, nextFileType)
+    );
+  }
+
   function handleExport() {
     onExport({
       fileName: normalizeExportFileName(fileName || defaultFileName, fileType),
@@ -169,14 +176,14 @@ export function ExportDialog({
                 active={fileType === "png"}
                 title={t("exportPngOption")}
                 description={t("exportPngHint")}
-                onClick={() => setFileType("png")}
+                onClick={() => changeFileType("png")}
               />
 
               <FormatCard
                 active={fileType === "pdf"}
                 title={t("exportPdfOption")}
                 description={t("exportPdfHint")}
-                onClick={() => setFileType("pdf")}
+                onClick={() => changeFileType("pdf")}
               />
             </div>
 

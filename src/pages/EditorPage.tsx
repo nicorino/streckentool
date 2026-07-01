@@ -115,13 +115,15 @@ export function EditorPage() {
   const [selection, setSelection] = useState<Selection | null>(null);
   const [printPreview, setPrintPreview] = useState(false);
   const [showHelperLines, setShowHelperLines] = useState(true);
-  const [snapToGrid, setSnapToGrid] = useState(true);
+  const [snapToGrid, setSnapToGrid] = useState(false);
   const [exportFormat, setExportFormat] =
     useState<ExportFormat>("a4-landscape");
 
   const [activeTool, setActiveTool] = useState<EditorTool>("select");
   const [pendingArrowKind, setPendingArrowKind] =
     useState<ArrowKind | null>(null);
+  const [pendingRectPlacement, setPendingRectPlacement] = useState(false);
+  const [pendingTextPlacement, setPendingTextPlacement] = useState(false);
   const [pendingFigureTemplateId, setPendingFigureTemplateId] =
     useState<string | null>(null);
   const [pendingMeasurementStart, setPendingMeasurementStart] =
@@ -153,6 +155,9 @@ export function EditorPage() {
     selection?.type === "decoration"
       ? decorations.find((decoration) => decoration.id === selection.id) ?? null
       : null;
+
+  const selectedBackgroundImage =
+    selection?.type === "background" ? backgroundImage : null;
 
   const selectedFigureTemplate = selectedFigure
     ? figureTemplates.find(
@@ -205,6 +210,22 @@ export function EditorPage() {
   );
 
   function addRectangle() {
+    setPendingRectPlacement(true);
+    setPendingTextPlacement(false);
+    setPendingFigureTemplateId(null);
+    setPendingArrowKind(null);
+    setPendingMeasurementStart(null);
+    setPendingCalibrationStart(null);
+    setCalibrationDraft(null);
+    setActiveTool("select");
+    setSelection(null);
+  }
+
+  function placePendingRect(point: CanvasPoint) {
+    if (!pendingRectPlacement) {
+      return;
+    }
+
     const id = createId();
 
     editorHistory.set((currentState) => ({
@@ -213,8 +234,8 @@ export function EditorPage() {
         ...currentState.rects,
         {
           id,
-          x: 5,
-          y: 5,
+          x: point.x,
+          y: point.y,
           width: 8,
           height: 4,
           rotation: 0,
@@ -227,15 +248,20 @@ export function EditorPage() {
       type: "rect",
       id,
     });
+
+    setPendingRectPlacement(false);
   }
 
   function addFigure(templateId: string) {
     setPendingFigureTemplateId(templateId);
+    setPendingRectPlacement(false);
+    setPendingTextPlacement(false);
     setActiveTool("select");
     setSelection(null);
     setPendingMeasurementStart(null);
     setPendingCalibrationStart(null);
     setCalibrationDraft(null);
+    setSelection(null);
   }
 
   function placePendingFigure(point: CanvasPoint) {
@@ -276,13 +302,29 @@ export function EditorPage() {
   }
 
   function addText() {
+    setPendingTextPlacement(true);
+    setPendingRectPlacement(false);
+    setPendingFigureTemplateId(null);
+    setPendingArrowKind(null);
+    setPendingMeasurementStart(null);
+    setPendingCalibrationStart(null);
+    setCalibrationDraft(null);
+    setActiveTool("select");
+    setSelection(null);
+  }
+
+  function placePendingText(point: CanvasPoint) {
+    if (!pendingTextPlacement) {
+      return;
+    }
+
     const id = createId();
 
     const textDecoration: Decoration = {
       id,
       type: "text",
-      x: exportBounds.left + 1,
-      y: exportBounds.top + 1,
+      x: point.x,
+      y: point.y,
       width: 12,
       height: 3,
       rotation: 0,
@@ -300,11 +342,15 @@ export function EditorPage() {
       type: "decoration",
       id,
     });
+
+    setPendingTextPlacement(false);
   }
 
 
   function addArrow(arrowKind: ArrowKind) {
     setPendingArrowKind(arrowKind);
+    setPendingRectPlacement(false);
+    setPendingTextPlacement(false);
     setActiveTool("select");
     setSelection(null);
     setPendingMeasurementStart(null);
@@ -487,12 +533,25 @@ export function EditorPage() {
     }));
   }
 
-  function loadExampleProject() {
+  async function loadExampleProject() {
     if (hasUnsavedChanges && !window.confirm(t("loadExampleConfirm"))) {
       return;
     }
 
-    const nextState = createExampleEditorState();
+    let nextState: EditorState;
+
+    try {
+      const response = await fetch("/example.json", { cache: "no-store" });
+
+      if (!response.ok) {
+        throw new Error(`Example project could not be loaded: ${response.status}`);
+      }
+
+      nextState = parseStreckentoolProject(await response.text());
+    } catch (error) {
+      console.error(error);
+      nextState = createExampleEditorState();
+    }
 
     editorHistory.reset(nextState);
     setLastCleanProjectJson(JSON.stringify(createStreckentoolProject(nextState)));
@@ -500,12 +559,14 @@ export function EditorPage() {
     setSelection(null);
     setPrintPreview(false);
     setShowHelperLines(true);
-    setSnapToGrid(true);
+    setSnapToGrid(false);
     setExportFormat("a4-landscape");
 
     setActiveTool("select");
     setPendingFigureTemplateId(null);
     setPendingArrowKind(null);
+    setPendingRectPlacement(false);
+    setPendingTextPlacement(false);
     setPendingMeasurementStart(null);
     setPendingCalibrationStart(null);
     setCalibrationDraft(null);
@@ -532,12 +593,14 @@ export function EditorPage() {
     setSelection(null);
     setPrintPreview(false);
     setShowHelperLines(true);
-    setSnapToGrid(true);
+    setSnapToGrid(false);
     setExportFormat("a4-landscape");
 
     setActiveTool("select");
     setPendingFigureTemplateId(null);
     setPendingArrowKind(null);
+    setPendingRectPlacement(false);
+    setPendingTextPlacement(false);
     setPendingMeasurementStart(null);
     setPendingCalibrationStart(null);
     setCalibrationDraft(null);
@@ -825,6 +888,8 @@ export function EditorPage() {
     setActiveTool(tool);
     setPendingFigureTemplateId(null);
     setPendingArrowKind(null);
+    setPendingRectPlacement(false);
+    setPendingTextPlacement(false);
     setPendingMeasurementStart(null);
     setPendingCalibrationStart(null);
     setCalibrationDraft(null);
@@ -835,6 +900,8 @@ export function EditorPage() {
     setSelection(null);
     setPendingFigureTemplateId(null);
     setPendingArrowKind(null);
+    setPendingRectPlacement(false);
+    setPendingTextPlacement(false);
     setPendingMeasurementStart(null);
     setPendingCalibrationStart(null);
     setCalibrationDraft(null);
@@ -845,6 +912,8 @@ export function EditorPage() {
     setSelection(null);
     setPendingFigureTemplateId(null);
     setPendingArrowKind(null);
+    setPendingRectPlacement(false);
+    setPendingTextPlacement(false);
     setPendingMeasurementStart(null);
     setPendingCalibrationStart(null);
     setCalibrationDraft(null);
@@ -1030,6 +1099,8 @@ export function EditorPage() {
         setPendingCalibrationStart(null);
         setPendingFigureTemplateId(null);
         setPendingArrowKind(null);
+        setPendingRectPlacement(false);
+        setPendingTextPlacement(false);
         setCalibrationDraft(null);
         setShowNewProjectDialog(false);
         setActiveTool("select");
@@ -1107,7 +1178,7 @@ export function EditorPage() {
           selectedDecoration={selectedDecoration}
           selectedFigureWarning={selectedFigureWarning}
           figureWarningCount={figureBoundsWarnings.length}
-          backgroundImage={backgroundImage}
+          backgroundImage={selectedBackgroundImage}
           onUpdateSelectedRect={updateSelectedRect}
           onUpdateSelectedFigure={updateSelectedFigure}
           onUpdateSelectedDecoration={updateSelectedDecoration}
@@ -1136,6 +1207,10 @@ export function EditorPage() {
             metadata={metadata}
             pendingMeasurementStart={pendingMeasurementStart}
             pendingCalibrationStart={pendingCalibrationStart}
+            pendingRectPlacement={pendingRectPlacement}
+            onPlacePendingRect={placePendingRect}
+            pendingTextPlacement={pendingTextPlacement}
+            onPlacePendingText={placePendingText}
             pendingFigureTemplateId={pendingFigureTemplateId}
             onPlacePendingFigure={placePendingFigure}
             pendingArrowKind={pendingArrowKind}

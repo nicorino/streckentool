@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import type { KonvaEventObject } from "konva/lib/Node";
-import { Image as KonvaImage, Layer, Rect } from "react-konva";
+import { Group, Image as KonvaImage, Layer, Rect } from "react-konva";
 import type { CourseBackgroundImage } from "../types/CourseBackgroundImage";
+import type { CourseRect } from "../types/CourseRect";
 import {
   metersToPixels,
   pixelsToMeters,
@@ -11,6 +12,10 @@ import {
 
 type BackgroundImageLayerProps = {
   backgroundImage: CourseBackgroundImage | null;
+  courseRects: CourseRect[];
+  clipToCourseAreas: boolean;
+  isSelected: boolean;
+  onSelect: () => void;
   onUpdateBackgroundImage: (backgroundImage: CourseBackgroundImage) => void;
   showEditorDecorations: boolean;
   isInteractive: boolean;
@@ -19,6 +24,10 @@ type BackgroundImageLayerProps = {
 
 export function BackgroundImageLayer({
   backgroundImage,
+  courseRects,
+  clipToCourseAreas,
+  isSelected,
+  onSelect,
   onUpdateBackgroundImage,
   showEditorDecorations,
   isInteractive,
@@ -61,6 +70,11 @@ export function BackgroundImageLayer({
 
   const isDraggable = isInteractive && !image.locked;
 
+  function handleSelect(event: KonvaEventObject<MouseEvent | TouchEvent>) {
+    event.cancelBubble = true;
+    onSelect();
+  }
+
   function handleDragMove(event: KonvaEventObject<DragEvent>) {
     if (!snapToGrid) return;
 
@@ -82,41 +96,53 @@ export function BackgroundImageLayer({
     });
   }
 
+  const imageNode = imageElement ? (
+    <KonvaImage
+      image={imageElement}
+      x={centerX}
+      y={centerY}
+      width={widthPx}
+      height={heightPx}
+      offsetX={widthPx / 2}
+      offsetY={heightPx / 2}
+      rotation={image.rotation}
+      opacity={image.opacity}
+      draggable={isDraggable}
+      onClick={handleSelect}
+      onTap={handleSelect}
+      onDragMove={handleDragMove}
+      onDragEnd={handleDragEnd}
+    />
+  ) : (
+    <Rect
+      x={centerX}
+      y={centerY}
+      width={widthPx}
+      height={heightPx}
+      offsetX={widthPx / 2}
+      offsetY={heightPx / 2}
+      rotation={image.rotation}
+      fill="#eee"
+      stroke="#999"
+      draggable={isDraggable}
+      onClick={handleSelect}
+      onTap={handleSelect}
+      onDragMove={handleDragMove}
+      onDragEnd={handleDragEnd}
+    />
+  );
+
   return (
-    <Layer listening={isInteractive && !image.locked}>
-      {imageElement ? (
-        <KonvaImage
-          image={imageElement}
-          x={centerX}
-          y={centerY}
-          width={widthPx}
-          height={heightPx}
-          offsetX={widthPx / 2}
-          offsetY={heightPx / 2}
-          rotation={image.rotation}
-          opacity={image.opacity}
-          draggable={isDraggable}
-          onDragMove={handleDragMove}
-          onDragEnd={handleDragEnd}
-        />
+    <Layer listening={isInteractive}>
+      {clipToCourseAreas && courseRects.length > 0 ? (
+        <Group clipFunc={(context) => drawCourseAreaClip(context, courseRects)}>
+          {imageNode}
+        </Group>
       ) : (
-        <Rect
-          x={centerX}
-          y={centerY}
-          width={widthPx}
-          height={heightPx}
-          offsetX={widthPx / 2}
-          offsetY={heightPx / 2}
-          rotation={image.rotation}
-          fill="#eee"
-          stroke="#999"
-          draggable={isDraggable}
-          onDragMove={handleDragMove}
-          onDragEnd={handleDragEnd}
-        />
+        imageNode
       )}
 
-      {showEditorDecorations && !image.locked && (
+      {showEditorDecorations && isSelected && (
         <Rect
           x={centerX}
           y={centerY}
@@ -133,4 +159,48 @@ export function BackgroundImageLayer({
       )}
     </Layer>
   );
+}
+
+function drawCourseAreaClip(
+  context: {
+    beginPath?: () => void;
+    moveTo: (x: number, y: number) => void;
+    lineTo: (x: number, y: number) => void;
+    closePath: () => void;
+  },
+  courseRects: CourseRect[]
+) {
+  context.beginPath?.();
+
+  for (const rect of courseRects) {
+    const centerX = metersToPixels(rect.x + rect.width / 2);
+    const centerY = metersToPixels(rect.y + rect.height / 2);
+    const halfWidth = metersToPixels(rect.width / 2);
+    const halfHeight = metersToPixels(rect.height / 2);
+    const rotation = (rect.rotation * Math.PI) / 180;
+
+    const corners = [
+      { x: -halfWidth, y: -halfHeight },
+      { x: halfWidth, y: -halfHeight },
+      { x: halfWidth, y: halfHeight },
+      { x: -halfWidth, y: halfHeight },
+    ].map((corner) => ({
+      x:
+        centerX +
+        corner.x * Math.cos(rotation) -
+        corner.y * Math.sin(rotation),
+      y:
+        centerY +
+        corner.x * Math.sin(rotation) +
+        corner.y * Math.cos(rotation),
+    }));
+
+    context.moveTo(corners[0].x, corners[0].y);
+
+    for (const corner of corners.slice(1)) {
+      context.lineTo(corner.x, corner.y);
+    }
+
+    context.closePath();
+  }
 }

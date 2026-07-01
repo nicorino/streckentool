@@ -10,4 +10,8 @@ export type Selection =
   | {
       type: "decoration";
       id: string;
+    }
+  | {
+      type: "background";
+      id: string;
     };

@@ -75,6 +75,10 @@ type EditorCanvasProps = {
   metadata: ProjectMetadata;
   pendingMeasurementStart: CanvasPoint | null;
   pendingCalibrationStart: CanvasPoint | null;
+  pendingRectPlacement: boolean;
+  onPlacePendingRect: (point: CanvasPoint) => void;
+  pendingTextPlacement: boolean;
+  onPlacePendingText: (point: CanvasPoint) => void;
   pendingFigureTemplateId: string | null;
   onPlacePendingFigure: (point: CanvasPoint) => void;
   pendingArrowKind: ArrowKind | null;
@@ -117,6 +121,10 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, EditorCanvasProps>(
       metadata,
       pendingMeasurementStart,
       pendingCalibrationStart,
+      pendingRectPlacement,
+      onPlacePendingRect,
+      pendingTextPlacement,
+      onPlacePendingText,
       pendingFigureTemplateId,
       onPlacePendingFigure,
       pendingArrowKind,
@@ -231,19 +239,30 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, EditorCanvasProps>(
       await waitForNextFrame();
 
       try {
+        stage.draw();
+        await waitForNextFrame();
+
+        const exportWidth = Math.max(1, Math.round(stage.width() || width));
+        const exportHeight = Math.max(1, Math.round(stage.height() || height));
+        const safePixelRatio = getSafeExportPixelRatio(
+          exportWidth,
+          exportHeight,
+          pixelRatio
+        );
+
         const dataUrl = stage.toDataURL({
           x: 0,
           y: 0,
-          width,
-          height,
-          pixelRatio,
+          width: exportWidth,
+          height: exportHeight,
+          pixelRatio: safePixelRatio,
           mimeType: "image/png",
         });
 
         return {
           dataUrl,
-          width,
-          height,
+          width: exportWidth,
+          height: exportHeight,
         };
       } finally {
         setIsExporting(false);
@@ -303,6 +322,26 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, EditorCanvasProps>(
     }
 
     function handleMouseDown(event: Konva.KonvaEventObject<MouseEvent>) {
+      if (pendingRectPlacement && event.evt.button === 0) {
+        const point = getWorldPointerPosition();
+
+        if (point) {
+          onPlacePendingRect(point);
+        }
+
+        return;
+      }
+
+      if (pendingTextPlacement && event.evt.button === 0) {
+        const point = getWorldPointerPosition();
+
+        if (point) {
+          onPlacePendingText(point);
+        }
+
+        return;
+      }
+
       if (pendingArrowKind && event.evt.button === 0) {
         const point = getWorldPointerPosition();
 
@@ -438,6 +477,8 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, EditorCanvasProps>(
           cursor:
             pendingArrowKind ||
             pendingFigureTemplateId ||
+            pendingRectPlacement ||
+            pendingTextPlacement ||
             activeTool === "measure" ||
             activeTool === "calibrate"
               ? "crosshair"
@@ -471,6 +512,17 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, EditorCanvasProps>(
 
           <BackgroundImageLayer
             backgroundImage={backgroundImage}
+            courseRects={rects}
+            clipToCourseAreas={isExporting}
+            isSelected={
+              backgroundImage !== null &&
+              selection?.type === "background" &&
+              selection.id === backgroundImage.id
+            }
+            onSelect={() => {
+              if (!backgroundImage) return;
+              onSelect({ type: "background", id: backgroundImage.id });
+            }}
             onUpdateBackgroundImage={onUpdateBackgroundImage}
             showEditorDecorations={effectiveShowEditorDecorations}
             isInteractive={activeTool === "select"}
@@ -590,6 +642,23 @@ function waitForNextFrame() {
   return new Promise<void>((resolve) => {
     requestAnimationFrame(() => resolve());
   });
+}
+
+function getSafeExportPixelRatio(
+  width: number,
+  height: number,
+  requestedPixelRatio: number
+) {
+  const maxCanvasPixels = 32000000;
+  const maxCanvasSide = 8192;
+  const safeByPixels = Math.sqrt(maxCanvasPixels / Math.max(1, width * height));
+  const safeByWidth = maxCanvasSide / Math.max(1, width);
+  const safeByHeight = maxCanvasSide / Math.max(1, height);
+
+  return Math.max(
+    0.25,
+    Math.min(requestedPixelRatio, safeByPixels, safeByWidth, safeByHeight)
+  );
 }
 
 function clamp(value: number, min: number, max: number) {

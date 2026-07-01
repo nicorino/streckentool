@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Streckentool Admin</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f5f7fb;
+      color: #172033;
+    }
+
+    body {
+      margin: 0;
+      padding: 28px;
+    }
+
+    header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      letter-spacing: 0;
+    }
+
+    .muted {
+      color: #64748b;
+      font-size: 13px;
+    }
+
+    button {
+      border: 1px solid #cbd5e1;
+      background: white;
+      color: #172033;
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .card, .panel {
+      background: white;
+      border: 1px solid #dbe3ef;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    .card {
+      padding: 16px;
+    }
+
+    .label {
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .value {
+      font-size: 30px;
+      font-weight: 800;
+      margin-top: 7px;
+    }
+
+    .panels {
+      display: grid;
+      grid-template-columns: 1.35fr 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .panel {
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+
+    h2 {
+      margin: 0 0 12px;
+      font-size: 16px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th, td {
+      padding: 8px 6px;
+      border-bottom: 1px solid #eef2f7;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: #64748b;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .chart {
+      display: grid;
+      gap: 8px;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 82px 1fr 46px;
+      gap: 10px;
+      align-items: center;
+      font-size: 12px;
+    }
+
+    .bar-track {
+      height: 10px;
+      border-radius: 999px;
+      background: #e2e8f0;
+      overflow: hidden;
+    }
+
+    .bar {
+      height: 100%;
+      background: #1976d2;
+      border-radius: inherit;
+    }
+
+    .error {
+      background: #fff1f2;
+      border: 1px solid #fda4af;
+      color: #9f1239;
+      border-radius: 8px;
+      padding: 14px;
+      display: none;
+    }
+
+    code {
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 2px 5px;
+    }
+
+    @media (max-width: 900px) {
+      body { padding: 16px; }
+      .grid, .panels { grid-template-columns: 1fr; }
+      header { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Streckentool Admin</h1>
+      <div class="muted" id="updated">Lade Statistiken...</div>
+    </div>
+    <button type="button" id="refresh">Aktualisieren</button>
+  </header>
+
+  <div class="error" id="error">
+    Stats konnten nicht geladen werden. Existiert <code>/admin/stats.json</code>?
+  </div>
+
+  <section class="grid">
+    <div class="card">
+      <div class="label">Seitenaufrufe heute</div>
+      <div class="value" id="todayViews">-</div>
+    </div>
+    <div class="card">
+      <div class="label">Besucher heute</div>
+      <div class="value" id="todayVisitors">-</div>
+    </div>
+    <div class="card">
+      <div class="label">Seitenaufrufe 7 Tage</div>
+      <div class="value" id="weekViews">-</div>
+    </div>
+    <div class="card">
+      <div class="label">Besucher 7 Tage</div>
+      <div class="value" id="weekVisitors">-</div>
+    </div>
+  </section>
+
+  <main class="panels">
+    <div>
+      <section class="panel">
+        <h2>Letzte 30 Tage</h2>
+        <div class="chart" id="dailyChart"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Letzte Seitenaufrufe</h2>
+        <table>
+          <thead><tr><th>Zeit</th><th>Seite</th><th>Status</th><th>Typ</th></tr></thead>
+          <tbody id="recentRows"></tbody>
+        </table>
+      </section>
+    </div>
+
+    <div>
+      <section class="panel">
+        <h2>Beliebte Seiten</h2>
+        <table>
+          <thead><tr><th>Seite</th><th>Aufrufe</th></tr></thead>
+          <tbody id="pageRows"></tbody>
+        </table>
+      </section>
+
+      <section class="panel">
+        <h2>Referrer</h2>
+        <table>
+          <thead><tr><th>Quelle</th><th>Aufrufe</th></tr></thead>
+          <tbody id="referrerRows"></tbody>
+        </table>
+      </section>
+
+      <section class="panel">
+        <h2>Gerate</h2>
+        <table>
+          <thead><tr><th>Typ</th><th>Anteil</th></tr></thead>
+          <tbody id="deviceRows"></tbody>
+        </table>
+      </section>
+
+      <section class="panel">
+        <h2>Admin</h2>
+        <p class="muted">
+          Passwort andern:
+          <code>sudo scripts/set-admin-password.sh admin "NEUES_PASSWORT"</code>
+        </p>
+        <p class="muted">
+          Stats neu erzeugen:
+          <code>sudo python3 scripts/generate-admin-stats.py</code>
+        </p>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const fmt = new Intl.NumberFormat("de-DE");
+
+    document.getElementById("refresh").addEventListener("click", loadStats);
+
+    function setText(id, value) {
+      document.getElementById(id).textContent = typeof value === "number" ? fmt.format(value) : value;
+    }
+
+    function rows(id, items, columns, emptyText) {
+      const body = document.getElementById(id);
+      body.innerHTML = "";
+
+      if (!items || items.length === 0) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = columns.length;
+        cell.className = "muted";
+        cell.textContent = emptyText || "Keine Daten";
+        row.appendChild(cell);
+        body.appendChild(row);
+        return;
+      }
+
+      for (const item of items) {
+        const row = document.createElement("tr");
+        for (const column of columns) {
+          const cell = document.createElement("td");
+          cell.textContent = column(item);
+          row.appendChild(cell);
+        }
+        body.appendChild(row);
+      }
+    }
+
+    function renderChart(days) {
+      const chart = document.getElementById("dailyChart");
+      chart.innerHTML = "";
+
+      const max = Math.max(1, ...days.map((day) => day.pageviews));
+
+      for (const day of days.slice(-30)) {
+        const row = document.createElement("div");
+        row.className = "bar-row";
+
+        const date = document.createElement("div");
+        date.className = "muted";
+        date.textContent = day.date.slice(5);
+
+        const track = document.createElement("div");
+        track.className = "bar-track";
+
+        const bar = document.createElement("div");
+        bar.className = "bar";
+        bar.style.width = `${Math.max(2, (day.pageviews / max) * 100)}%`;
+        track.appendChild(bar);
+
+        const value = document.createElement("div");
+        value.textContent = fmt.format(day.pageviews);
+
+        row.append(date, track, value);
+        chart.appendChild(row);
+      }
+    }
+
+    async function loadStats() {
+      const error = document.getElementById("error");
+      error.style.display = "none";
+
+      try {
+        const response = await fetch(`stats.json?ts=${Date.now()}`, { cache: "no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const stats = await response.json();
+
+        setText("todayViews", stats.totals.todayPageviews);
+        setText("todayVisitors", stats.totals.todayVisitors);
+        setText("weekViews", stats.totals.last7DaysPageviews);
+        setText("weekVisitors", stats.totals.last7DaysVisitors);
+
+        document.getElementById("updated").textContent =
+          `Zuletzt aktualisiert: ${new Date(stats.generatedAt).toLocaleString("de-DE")}`;
+
+        renderChart(stats.daily || []);
+
+        rows("pageRows", stats.topPages, [
+          (item) => item.path,
+          (item) => fmt.format(item.count),
+        ]);
+
+        rows("referrerRows", stats.topReferrers, [
+          (item) => item.referrer,
+          (item) => fmt.format(item.count),
+        ], "Keine externen Referrer");
+
+        rows("deviceRows", stats.devices, [
+          (item) => item.device,
+          (item) => `${fmt.format(item.count)} (${item.percent}%)`,
+        ]);
+
+        rows("recentRows", stats.recentPageviews, [
+          (item) => new Date(item.time).toLocaleString("de-DE"),
+          (item) => item.path,
+          (item) => String(item.status),
+          (item) => item.device,
+        ]);
+      } catch (err) {
+        console.error(err);
+        error.style.display = "block";
+      }
+    }
+
+    loadStats();
+  </script>
+</body>
+</html>

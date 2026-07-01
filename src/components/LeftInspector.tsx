@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import type { CourseRect } from "../types/CourseRect";
 import type { CourseValidation } from "../course/validateConnectedCourse";
-import type { FigureInstance, FigureTemplate } from "../types/Figure";
+import type { FigureConfig, FigureInstance, FigureTemplate } from "../types/Figure";
 import type { Decoration } from "../types/Decoration";
 import type { FigureBoundsWarning } from "../course/checkFigureBounds";
 import type { CourseBackgroundImage } from "../types/CourseBackgroundImage";
@@ -57,6 +57,7 @@ export function LeftInspector({
     selectedFigure,
     selectedFigureTemplate,
     selectedDecoration,
+    backgroundImage,
     t,
   });
 
@@ -64,28 +65,6 @@ export function LeftInspector({
     selectedFigure && selectedFigureTemplate
       ? normalizeFigureConfig(selectedFigureTemplate, selectedFigure.config)
       : null;
-
-  const selectedFigureIsConfigurableSlalom =
-    selectedFigureTemplate !== null &&
-    isConfigurableSlalomTemplate(selectedFigureTemplate);
-  const selectedFigureIsConfigurableWechseltor =
-    selectedFigureTemplate !== null &&
-    isConfigurableWechseltorTemplate(selectedFigureTemplate);
-  const selectedFigureIsConfigurableKreisel =
-    selectedFigureTemplate !== null &&
-    isConfigurableKreiselTemplate(selectedFigureTemplate);
-  const selectedFigureIsConfigurableSSpurgasse =
-    selectedFigureTemplate !== null &&
-    isConfigurableSSpurgasseTemplate(selectedFigureTemplate);
-  const selectedFigureIsConfigurableZGasse =
-    selectedFigureTemplate !== null &&
-    isConfigurableZGasseTemplate(selectedFigureTemplate);
-  const selectedFigureIsConfigurableSpurgasseGerade =
-    selectedFigureTemplate !== null &&
-    isConfigurableSpurgasseGeradeTemplate(selectedFigureTemplate);
-  const selectedFigureIsConfigurableGasse =
-    selectedFigureTemplate !== null &&
-    isConfigurableGasseTemplate(selectedFigureTemplate);
 
   return (
     <aside style={inspectorStyle}>
@@ -200,7 +179,7 @@ export function LeftInspector({
         </DetailsSection>
       )}
 
-      {!selectedRect && !selectedFigure && !selectedDecoration && (
+      {!selectedRect && !selectedFigure && !selectedDecoration && !backgroundImage && (
         <section style={emptyStateStyle}>
           <strong>{t("statusReady")}</strong>
           <p>{t("selectObjectHint")}</p>
@@ -327,231 +306,12 @@ export function LeftInspector({
 
           {selectedFigureConfig && (
             <DetailsSection title={t("figureSettings")} nested defaultOpen>
-
-
-              {selectedFigureIsConfigurableSlalom && (
-                <>
-                  <NumberInput
-                    label={t("slalomConeCount")}
-                    value={selectedFigureConfig.coneCount ?? 5}
-                    min={2}
-                    max={10}
-                    step={1}
-                    onChange={(value) =>
-                      onUpdateSelectedFigure({
-                        config: {
-                          ...selectedFigureConfig,
-                          coneCount: Math.round(value),
-                        },
-                      })
-                    }
-                  />
-
-                  <NumberInput
-                    label={t("slalomConeDistance")}
-                    value={selectedFigureConfig.coneDistanceMeters ?? 4}
-                    min={0}
-                    max={10}
-                    step={0.5}
-                    onChange={(value) =>
-                      onUpdateSelectedFigure({
-                        config: {
-                          ...selectedFigureConfig,
-                          coneDistanceMeters: value,
-                        },
-                      })
-                    }
-                  />
-              <label
-                style={{
-                  display: "grid",
-                  gap: 6,
-                  fontSize: 12,
-                  fontWeight: 700,
-                }}
-              >
-                {t("slalomFirstConeDirection")}
-                <select
-                  value={selectedFigureConfig.slalomFirstConeOrientation ?? "left"}
-                  onChange={(event) =>
-                    onUpdateSelectedFigure({
-                      config: {
-                        ...selectedFigureConfig,
-                        slalomFirstConeOrientation:
-                          event.target.value === "right" ? "right" : "left",
-                      },
-                    })
-                  }
-                  style={{
-                    height: 32,
-                    borderRadius: 8,
-                    border: "1px solid var(--st-border-soft)",
-                    background: "var(--st-card)",
-                    color: "var(--st-text)",
-                    padding: "0 8px",
-                  }}
-                >
-                  <option value="left">{t("slalomFirstConeLeft")}</option>
-                  <option value="right">{t("slalomFirstConeRight")}</option>
-                </select>
-              </label>
-                </>
-              )}
-            {selectedFigureIsConfigurableWechseltor && (
-              <NumberInput
-                label={t("wechseltorMiddleGap")}
-                value={selectedFigureConfig.wechseltorMiddleGapMeters ?? 2.5}
-                min={1.5}
-                max={4}
-                step={0.1}
-                onChange={(value) =>
-                  onUpdateSelectedFigure({
-                    config: {
-                      ...selectedFigureConfig,
-                      wechseltorMiddleGapMeters: value,
-                    },
-                  })
-                }
+              <FigureSettings
+                template={selectedFigureTemplate}
+                config={selectedFigureConfig}
+                onUpdateSelectedFigure={onUpdateSelectedFigure}
+                t={t}
               />
-            )}
-            {selectedFigureIsConfigurableKreisel && (
-              <NumberInput
-                label={t("kreiselEntryExitConeCount")}
-                value={selectedFigureConfig.kreiselEntryExitConeCount ?? 5}
-                min={3}
-                max={12}
-                step={1}
-                onChange={(value) =>
-                  onUpdateSelectedFigure({
-                    config: {
-                      ...selectedFigureConfig,
-                      kreiselEntryExitConeCount: value,
-                    },
-                  })
-                }
-              />
-            )}
-            {selectedFigureIsConfigurableSSpurgasse && (
-              <NumberInput
-                label={t("sSpurgasseCurveAmount")}
-                value={selectedFigureConfig.sSpurgasseCurveAmount ?? 3}
-                min={0}
-                max={6}
-                step={0.25}
-                onChange={(value) =>
-                  onUpdateSelectedFigure({
-                    config: {
-                      ...selectedFigureConfig,
-                      sSpurgasseCurveAmount: value,
-                    },
-                  })
-                }
-              />
-            )}
-            {selectedFigureIsConfigurableSSpurgasse && (
-              <NumberInput
-                label={t("sSpurgasseLengthMeters")}
-                value={selectedFigureConfig.sSpurgasseLengthMeters ?? 12}
-                min={3}
-                max={30}
-                step={0.5}
-                onChange={(value) =>
-                  onUpdateSelectedFigure({
-                    config: {
-                      ...selectedFigureConfig,
-                      sSpurgasseLengthMeters: value,
-                    },
-                  })
-                }
-              />
-            )}
-            {selectedFigureIsConfigurableZGasse && (
-              <>
-                <NumberInput
-                  label={t("zGasseGateGap")}
-                  value={selectedFigureConfig.zGasseGateGapMeters ?? 2.5}
-                  min={2}
-                  max={4}
-                  step={0.1}
-                  onChange={(value) =>
-                    onUpdateSelectedFigure({
-                      config: {
-                        ...selectedFigureConfig,
-                        zGasseGateGapMeters: value,
-                      },
-                    })
-                  }
-                />
-
-                <label
-                  style={{
-                    display: "grid",
-                    gap: 6,
-                    fontSize: 12,
-                    fontWeight: 700,
-                  }}
-                >
-                  {t("zGasseMiddleGateOffset")}
-                  <select
-                    value={selectedFigureConfig.zGasseMiddleGateOffsetCones ?? 0}
-                    onChange={(event) =>
-                      onUpdateSelectedFigure({
-                        config: {
-                          ...selectedFigureConfig,
-                          zGasseMiddleGateOffsetCones: Number(event.target.value),
-                        },
-                      })
-                    }
-                    style={{
-                      height: 32,
-                      borderRadius: 8,
-                      border: "1px solid var(--st-border-soft)",
-                      background: "var(--st-card)",
-                      color: "var(--st-text)",
-                      padding: "0 8px",
-                    }}
-                  >
-                    <option value={-1}>{t("zGasseMiddleGateOffsetUp")}</option>
-                    <option value={0}>{t("zGasseMiddleGateOffsetNone")}</option>
-                    <option value={1}>{t("zGasseMiddleGateOffsetDown")}</option>
-                  </select>
-                </label>
-              </>
-            )}
-            {selectedFigureIsConfigurableSpurgasseGerade && (
-              <NumberInput
-                label={t("spurgasseGeradeLengthMeters")}
-                value={selectedFigureConfig.spurgasseGeradeLengthMeters ?? 8}
-                min={1}
-                max={30}
-                step={0.5}
-                onChange={(value) =>
-                  onUpdateSelectedFigure({
-                    config: {
-                      ...selectedFigureConfig,
-                      spurgasseGeradeLengthMeters: value,
-                    },
-                  })
-                }
-              />
-            )}
-            {selectedFigureIsConfigurableGasse && (
-              <NumberInput
-                label={t("gasseConeCount")}
-                value={selectedFigureConfig.gasseConeCount ?? 3}
-                min={3}
-                max={5}
-                step={1}
-                onChange={(value) =>
-                  onUpdateSelectedFigure({
-                    config: {
-                      ...selectedFigureConfig,
-                      gasseConeCount: Math.round(value),
-                    },
-                  })
-                }
-              />
-            )}
             </DetailsSection>
           )}
 
@@ -749,22 +509,183 @@ export function LeftInspector({
   );
 }
 
+function FigureSettings({
+  template,
+  config,
+  onUpdateSelectedFigure,
+  t,
+}: {
+  template: FigureTemplate;
+  config: FigureConfig;
+  onUpdateSelectedFigure: (patch: Partial<FigureInstance>) => void;
+  t: (key: TranslationKey) => string;
+}) {
+  function updateConfig(patch: Partial<FigureConfig>) {
+    onUpdateSelectedFigure({
+      config: {
+        ...config,
+        ...patch,
+      },
+    });
+  }
+
+  return (
+    <>
+      {isConfigurableSlalomTemplate(template) && (
+        <>
+          <NumberInput
+            label={t("slalomConeCount")}
+            value={config.coneCount ?? 4}
+            min={2}
+            max={10}
+            step={1}
+            onChange={(value) => updateConfig({ coneCount: Math.round(value) })}
+          />
+
+          <NumberInput
+            label={t("slalomConeDistance")}
+            value={config.coneDistanceMeters ?? 4}
+            min={0}
+            max={10}
+            step={0.5}
+            onChange={(value) => updateConfig({ coneDistanceMeters: value })}
+          />
+
+          <SelectInput
+            label={t("slalomFirstConeDirection")}
+            value={config.slalomFirstConeOrientation ?? "left"}
+            options={[
+              { value: "left", label: t("slalomFirstConeLeft") },
+              { value: "right", label: t("slalomFirstConeRight") },
+            ]}
+            onChange={(value) =>
+              updateConfig({
+                slalomFirstConeOrientation:
+                  value === "right" ? "right" : "left",
+              })
+            }
+          />
+        </>
+      )}
+
+      {isConfigurableWechseltorTemplate(template) && (
+        <NumberInput
+          label={t("wechseltorMiddleGap")}
+          value={config.wechseltorMiddleGapMeters ?? 2.5}
+          min={1.5}
+          max={4}
+          step={0.1}
+          onChange={(value) => updateConfig({ wechseltorMiddleGapMeters: value })}
+        />
+      )}
+
+      {isConfigurableKreiselTemplate(template) && (
+        <NumberInput
+          label={t("kreiselEntryExitConeCount")}
+          value={config.kreiselEntryExitConeCount ?? 5}
+          min={3}
+          max={12}
+          step={1}
+          onChange={(value) =>
+            updateConfig({ kreiselEntryExitConeCount: Math.round(value) })
+          }
+        />
+      )}
+
+      {isConfigurableSSpurgasseTemplate(template) && (
+        <>
+          <NumberInput
+            label={t("sSpurgasseCurveAmount")}
+            value={config.sSpurgasseCurveAmount ?? 3}
+            min={0}
+            max={6}
+            step={0.25}
+            onChange={(value) => updateConfig({ sSpurgasseCurveAmount: value })}
+          />
+
+          <NumberInput
+            label={t("sSpurgasseLengthMeters")}
+            value={config.sSpurgasseLengthMeters ?? 12}
+            min={3}
+            max={30}
+            step={0.5}
+            onChange={(value) => updateConfig({ sSpurgasseLengthMeters: value })}
+          />
+        </>
+      )}
+
+      {isConfigurableZGasseTemplate(template) && (
+        <>
+          <NumberInput
+            label={t("zGasseGateGap")}
+            value={config.zGasseGateGapMeters ?? 2.5}
+            min={2}
+            max={4}
+            step={0.1}
+            onChange={(value) => updateConfig({ zGasseGateGapMeters: value })}
+          />
+
+          <SelectInput
+            label={t("zGasseMiddleGateOffset")}
+            value={String(config.zGasseMiddleGateOffsetCones ?? 0)}
+            options={[
+              { value: "-1", label: t("zGasseMiddleGateOffsetUp") },
+              { value: "0", label: t("zGasseMiddleGateOffsetNone") },
+              { value: "1", label: t("zGasseMiddleGateOffsetDown") },
+            ]}
+            onChange={(value) =>
+              updateConfig({ zGasseMiddleGateOffsetCones: Number(value) })
+            }
+          />
+        </>
+      )}
+
+      {isConfigurableSpurgasseGeradeTemplate(template) && (
+        <NumberInput
+          label={t("spurgasseGeradeLengthMeters")}
+          value={config.spurgasseGeradeLengthMeters ?? 8}
+          min={1}
+          max={30}
+          step={0.5}
+          onChange={(value) =>
+            updateConfig({ spurgasseGeradeLengthMeters: value })
+          }
+        />
+      )}
+
+      {isConfigurableGasseTemplate(template) && (
+        <NumberInput
+          label={t("gasseConeCount")}
+          value={config.gasseConeCount ?? 3}
+          min={3}
+          max={5}
+          step={1}
+          onChange={(value) => updateConfig({ gasseConeCount: Math.round(value) })}
+        />
+      )}
+    </>
+  );
+}
+
 function getSelectedTitle({
   selectedRect,
   selectedFigure,
   selectedFigureTemplate,
   selectedDecoration,
+  backgroundImage,
   t,
 }: {
   selectedRect: CourseRect | null;
   selectedFigure: FigureInstance | null;
   selectedFigureTemplate: FigureTemplate | null;
   selectedDecoration: Decoration | null;
+  backgroundImage: CourseBackgroundImage | null;
   t: (key: TranslationKey) => string;
 }) {
   if (selectedRect) return t("workspace");
   if (selectedFigure) return selectedFigureTemplate?.name ?? t("figure");
   if (selectedDecoration) return getDecorationTitle(selectedDecoration, t);
+  if (backgroundImage) return t("backgroundImage");
   return null;
 }
 
@@ -890,6 +811,35 @@ function MetricGrid({
 
 function ButtonGrid({ children }: { children: ReactNode }) {
   return <div style={buttonGridStyle}>{children}</div>;
+}
+
+type SelectInputProps = {
+  label: string;
+  value: string;
+  options: {
+    value: string;
+    label: string;
+  }[];
+  onChange: (value: string) => void;
+};
+
+function SelectInput({ label, value, options, onChange }: SelectInputProps) {
+  return (
+    <label style={fieldLabelStyle}>
+      <span>{label}</span>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        style={inputStyle}
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
 }
 
 type NumberInputProps = {
